@@ -1,0 +1,527 @@
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows;
+using System.Xml;
+using System.Xml.Linq;
+using XmlGeneratorNew.Models;
+using XmlGeneratorNew.Views;
+using System.Collections.Generic;
+
+namespace XmlGeneratorNew.ViewModels
+{
+    public partial class MainViewModel : ObservableObject
+    {
+        public ObservableCollection<object> RootItems { get; } = new();
+
+        public ObservableCollection<NamespaceItem> Namespaces { get; } = new()
+        {
+            new NamespaceItem { Prefix = "e", Uri = "http://www.sanatorium-is.ru/editor", IsSelected = true },
+            new NamespaceItem { Prefix = "xaml", Uri = "http://schemas.microsoft.com/winfx/2006/xaml/presentation", IsSelected = true },
+            new NamespaceItem { Prefix = "x", Uri = "http://schemas.microsoft.com/winfx/2006/xaml", IsSelected = true },
+            new NamespaceItem { Prefix = "od", Uri = "http://www.sanatorium-is.ru/officeDocument", IsSelected = true },
+            new NamespaceItem { Prefix = "precompile", Uri = "http://www.sanatorium-is.ru/premetadata", IsSelected = true },
+            new NamespaceItem { Prefix = "p", Uri = "clr-namespace:Markup.Programming;assembly=Markup.Programming", IsSelected = false }
+        };
+
+        [ObservableProperty]
+        private string templateName = "";
+
+        [ObservableProperty]
+        private object? selectedItem;
+
+        private int groupIndex = 1;
+        private int propertyIndex = 1;
+
+        private string currentSavePath = "metadata.xml";
+
+        public IRelayCommand AddSectionCommand { get; }
+        public IRelayCommand AddGroupCommand { get; }
+        public IRelayCommand AddPropertyCommand { get; }
+        public IRelayCommand DeleteCommand { get; }
+        public IRelayCommand ResetCommand { get; }
+        public IRelayCommand LoadCommand { get; }
+        public IRelayCommand SaveCommand { get; }
+        public IRelayCommand OpenNamespaceSettingsCommand { get; }
+
+        public MainViewModel()
+        {
+            AddSectionCommand = new RelayCommand(AddSection);
+            AddGroupCommand = new RelayCommand(AddGroup);
+            AddPropertyCommand = new RelayCommand(AddProperty);
+            DeleteCommand = new RelayCommand(DeleteSelected, CanDelete);
+            ResetCommand = new RelayCommand(ResetAll);
+            LoadCommand = new RelayCommand(LoadXml);
+            SaveCommand = new RelayCommand(SaveXml);
+            OpenNamespaceSettingsCommand = new RelayCommand(OpenNamespaceSettings);
+        }
+
+        private void AddSection()
+        {
+            var newSection = new SectionItem
+            {
+                Name = $"Секция_{RootItems.OfType<SectionItem>().Count() + 1}",
+                IsExpanded = true,
+                IsSelected = true
+            };
+            RootItems.Add(newSection);
+            SelectedItem = newSection;
+        }
+
+        private void AddGroup()
+        {
+            if (SelectedItem is SectionItem selectedSection)
+            {
+                var newGroup = new GroupItem { Name = $"Группа_{groupIndex++}", IsExpanded = true, IsSelected = true };
+                selectedSection.AddGroup(newGroup);
+                SelectedItem = newGroup;
+            }
+            else if (SelectedItem is GroupItem selectedGroup)
+            {
+                var newSubGroup = new GroupItem { Name = $"Подгруппа_{groupIndex++}", IsExpanded = true, IsSelected = true };
+                selectedGroup.AddGroup(newSubGroup);
+                SelectedItem = newSubGroup;
+            }
+            else
+            {
+                var newGroup = new GroupItem { Name = $"Группа_{groupIndex++}", IsExpanded = true, IsSelected = true };
+                RootItems.Add(newGroup);
+                SelectedItem = newGroup;
+            }
+        }
+
+        private void AddProperty()
+        {
+            if (SelectedItem is GroupItem selectedGroup)
+            {
+                var newProperty = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
+                selectedGroup.AddProperty(newProperty);
+                SelectedItem = newProperty;
+            }
+            else
+            {
+                var newProperty = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
+                RootItems.Add(newProperty);
+                SelectedItem = newProperty;
+            }
+        }
+
+        private bool CanDelete() => SelectedItem != null;
+
+        private void DeleteSelected()
+        {
+            if (SelectedItem == null) return;
+
+            bool removed = false;
+
+            if (SelectedItem is PropertyItem prop)
+            {
+                if (RootItems.Contains(prop))
+                {
+                    RootItems.Remove(prop);
+                    removed = true;
+                }
+                else
+                {
+                    removed = RemovePropertyFromGroups(RootItems.OfType<SectionItem>(), prop) ||
+                              RemovePropertyFromGroups(RootItems.OfType<GroupItem>(), prop);
+                }
+            }
+            else if (SelectedItem is GroupItem group)
+            {
+                if (RootItems.Contains(group))
+                {
+                    RootItems.Remove(group);
+                    removed = true;
+                }
+                else
+                {
+                    removed = RemoveGroup(RootItems.OfType<SectionItem>(), group) ||
+                              RemoveGroup(RootItems.OfType<GroupItem>(), group);
+                }
+            }
+            else if (SelectedItem is SectionItem section)
+            {
+                if (RootItems.Contains(section))
+                {
+                    RootItems.Remove(section);
+                    removed = true;
+                }
+            }
+
+            if (removed)
+            {
+                SelectedItem = null;
+                DeleteCommand.NotifyCanExecuteChanged();
+            }
+        }
+
+        private bool RemoveGroup(IEnumerable<SectionItem> sections, GroupItem target)
+        {
+            foreach (var section in sections)
+            {
+                if (section.RemoveGroup(target))
+                {
+                    return true;
+                }
+                foreach (var group in section.Groups)
+                {
+                    if (RemoveGroup(group.Groups, target)) return true;
+                }
+            }
+            return false;
+        }
+
+        private bool RemoveGroup(IEnumerable<GroupItem> groups, GroupItem target)
+        {
+            foreach (var group in groups)
+            {
+                if (group.RemoveChild(target))
+                {
+                    return true;
+                }
+                if (RemoveGroup(group.Groups, target)) return true;
+            }
+            return false;
+        }
+
+        private bool RemovePropertyFromGroups(IEnumerable<SectionItem> sections, PropertyItem target)
+        {
+            foreach (var section in sections)
+            {
+                foreach (var group in section.Groups)
+                {
+                    if (RemovePropertyFromGroup(group, target)) return true;
+                }
+            }
+            return false;
+        }
+
+        private bool RemovePropertyFromGroups(IEnumerable<GroupItem> groups, PropertyItem target)
+        {
+            foreach (var group in groups)
+            {
+                if (RemovePropertyFromGroup(group, target)) return true;
+            }
+            return false;
+        }
+
+        private bool RemovePropertyFromGroup(GroupItem group, PropertyItem target)
+        {
+            if (group.RemoveChild(target))
+                return true;
+
+            foreach (var subgroup in group.Groups)
+            {
+                if (RemovePropertyFromGroup(subgroup, target)) return true;
+            }
+            return false;
+        }
+
+        private void ResetAll()
+        {
+            var result = MessageBox.Show("Вы уверены, что хотите очистить все данные и начать с нуля?",
+                                         "Подтверждение сброса",
+                                         MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                RootItems.Clear();
+                SelectedItem = null;
+                DeleteCommand.NotifyCanExecuteChanged();
+            }
+        }
+
+        private void LoadXml()
+        {
+            var openFileDialog = new OpenFileDialog { Filter = "XML файлы (*.xml)|*.xml|Все файлы (*.*)|*.*" };
+            if (openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    groupIndex = 1;
+                    propertyIndex = 1;
+
+                    var loadedItems = LoadXmlToModel(openFileDialog.FileName);
+                    RootItems.Clear();
+                    foreach (var item in loadedItems)
+                        RootItems.Add(item);
+
+                    MessageBox.Show("XML шаблон успешно загружен.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (System.Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при загрузке XML: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private ObservableCollection<object> LoadXmlToModel(string filePath)
+        {
+            var rootItems = new ObservableCollection<object>();
+            var doc = XDocument.Load(filePath);
+
+            var root = doc.Root;
+            if (root == null || root.Name.LocalName != "consultation")
+                throw new System.Exception("Некорректный XML: корневой элемент должен быть <consultation>");
+
+            TemplateName = (string?)root.Attribute("name") ?? "";
+
+            foreach (var element in root.Elements())
+            {
+                switch (element.Name.LocalName)
+                {
+                    case "section":
+                        rootItems.Add(ParseSection(element));
+                        break;
+                    case "group":
+                        rootItems.Add(ParseGroup(element));
+                        break;
+                    case "property":
+                        rootItems.Add(ParseProperty(element));
+                        break;
+                }
+            }
+            return rootItems;
+        }
+
+        private SectionItem ParseSection(XElement element)
+        {
+            var section = new SectionItem
+            {
+                Code = (string?)element.Attribute("code") ?? "",
+                Name = (string?)element.Attribute("name") ?? "",
+                Title = (string?)element.Attribute("title") ?? ""
+            };
+
+            foreach (var groupElem in element.Elements("group"))
+            {
+                var group = ParseGroup(groupElem);
+                section.AddGroup(group);
+            }
+
+            return section;
+        }
+
+        private GroupItem ParseGroup(XElement element)
+        {
+            string caption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/editor")) ?? "";
+            string nameAttr = (string?)element.Attribute("name") ?? "";
+
+            var group = new GroupItem
+            {
+                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Группа_{groupIndex++}"),
+                Caption = caption,
+                OdCaption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
+                Layout = (string?)element.Attribute(XName.Get("layout", "http://www.sanatorium-is.ru/editor")) ?? "DockPanel",
+                Separator = (string?)element.Attribute(XName.Get("separator", "http://www.sanatorium-is.ru/editor")) ?? "",
+                Suffix = (string?)element.Attribute(XName.Get("suffix", "http://www.sanatorium-is.ru/editor")) ?? "",
+                OdSeparator = (string?)element.Attribute(XName.Get("separator", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
+                OdSuffix = (string?)element.Attribute(XName.Get("suffix", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
+                OdGroupMode = (string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument")) ?? ""
+            };
+
+            foreach (var child in element.Elements())
+            {
+                switch (child.Name.LocalName)
+                {
+                    case "group":
+                        var subGroup = ParseGroup(child);
+                        group.AddGroup(subGroup);
+                        break;
+                    case "property":
+                        var prop = ParseProperty(child);
+                        group.AddProperty(prop);
+                        break;
+                }
+            }
+
+            return group;
+        }
+
+        private PropertyItem ParseProperty(XElement element)
+        {
+            string caption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/editor")) ?? "";
+            string nameAttr = (string?)element.Attribute("name") ?? "";
+
+            var prop = new PropertyItem
+            {
+                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Свойство_{propertyIndex++}"),
+                Caption = caption,
+                OdCaption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
+                Separator = (string?)element.Attribute(XName.Get("separator", "http://www.sanatorium-is.ru/editor")) ?? "",
+                Suffix = (string?)element.Attribute(XName.Get("suffix", "http://www.sanatorium-is.ru/editor")) ?? "",
+                OdSeparator = (string?)element.Attribute(XName.Get("separator", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
+                OdSuffix = (string?)element.Attribute(XName.Get("suffix", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
+                MinWidth = (string?)element.Attribute(XName.Get("MinWidth", "http://schemas.microsoft.com/winfx/2006/xaml/presentation")) ?? "",
+                MinLines = (string?)element.Attribute(XName.Get("MinLines", "http://schemas.microsoft.com/winfx/2006/xaml/presentation")) ?? "",
+                AutoSuggestName = (string?)element.Attribute(XName.Get("autoSuggestName", "http://www.sanatorium-is.ru/editor")) ?? "",
+                Value = (string?)element.Attribute("value") ?? ""
+            };
+
+            string typeStr = (string?)element.Attribute("type") ?? "string";
+
+            prop.Type = typeStr switch
+            {
+                "bool" => PropertyType.Bool,
+                "const" => PropertyType.Const,
+                _ => PropertyType.String
+            };
+
+            return prop;
+        }
+
+        private void SaveXml()
+        {
+            var saveFileDialog = new SaveFileDialog
+            {
+                Filter = "XML файлы (*.xml)|*.xml|Все файлы (*.*)|*.*",
+                FileName = currentSavePath
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                currentSavePath = saveFileDialog.FileName;
+
+                try
+                {
+                    var settings = new XmlWriterSettings
+                    {
+                        Indent = true,
+                        IndentChars = "  ",
+                        NewLineChars = "\r\n",
+                        Encoding = System.Text.Encoding.UTF8
+                    };
+
+                    using var writer = XmlWriter.Create(currentSavePath, settings);
+
+                    writer.WriteStartDocument();
+                    writer.WriteStartElement("consultation");
+
+                    foreach (var ns in Namespaces.Where(n => n.IsSelected))
+                    {
+                        if (string.IsNullOrEmpty(ns.Prefix))
+                            writer.WriteAttributeString("xmlns", ns.Uri);
+                        else
+                            writer.WriteAttributeString("xmlns", ns.Prefix, null, ns.Uri);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(templateName))
+                        writer.WriteAttributeString("name", templateName);
+
+                    foreach (var item in RootItems)
+                    {
+                        switch (item)
+                        {
+                            case SectionItem section:
+                                writer.WriteStartElement("section");
+                                if (!string.IsNullOrEmpty(section.Code))
+                                    writer.WriteAttributeString("code", section.Code);
+                                writer.WriteAttributeString("name", section.Name ?? "");
+                                if (!string.IsNullOrEmpty(section.Title))
+                                    writer.WriteAttributeString("title", section.Title);
+                                foreach (var group in section.Groups)
+                                    WriteGroup(writer, group);
+                                writer.WriteEndElement();
+                                break;
+
+                            case GroupItem group:
+                                WriteGroup(writer, group);
+                                break;
+
+                            case PropertyItem prop:
+                                WriteProperty(writer, prop);
+                                break;
+                        }
+                    }
+
+                    writer.WriteEndElement();
+                    writer.WriteEndDocument();
+
+                    MessageBox.Show($"XML успешно сохранён в:\n{currentSavePath}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (System.Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при сохранении XML:\n{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void WriteGroup(XmlWriter writer, GroupItem group)
+        {
+            writer.WriteStartElement("group");
+
+            if (!string.IsNullOrEmpty(group.Caption))
+                writer.WriteAttributeString("e", "caption", null, group.Caption);
+            if (!string.IsNullOrEmpty(group.OdCaption))
+                writer.WriteAttributeString("od", "caption", null, group.OdCaption);
+            if (!string.IsNullOrEmpty(group.Layout))
+                writer.WriteAttributeString("e", "layout", null, group.Layout);
+            if (!string.IsNullOrEmpty(group.Separator))
+                writer.WriteAttributeString("e", "separator", null, group.Separator);
+            if (!string.IsNullOrEmpty(group.Suffix))
+                writer.WriteAttributeString("e", "suffix", null, group.Suffix);
+            if (!string.IsNullOrEmpty(group.OdSeparator))
+                writer.WriteAttributeString("od", "separator", null, group.OdSeparator);
+            if (!string.IsNullOrEmpty(group.OdSuffix))
+                writer.WriteAttributeString("od", "suffix", null, group.OdSuffix);
+            if (!string.IsNullOrEmpty(group.OdGroupMode))
+                writer.WriteAttributeString("od", "groupMode", null, group.OdGroupMode);
+
+            foreach (var prop in group.Properties)
+                WriteProperty(writer, prop);
+
+            foreach (var subgroup in group.Groups)
+                WriteGroup(writer, subgroup);
+
+            writer.WriteEndElement();
+        }
+
+        private void WriteProperty(XmlWriter writer, PropertyItem prop)
+        {
+            writer.WriteStartElement("property");
+            if (!string.IsNullOrEmpty(prop.Caption))
+                writer.WriteAttributeString("e", "caption", null, prop.Caption);
+            if (!string.IsNullOrEmpty(prop.OdCaption))
+                writer.WriteAttributeString("od", "caption", null, prop.OdCaption);
+
+            string typeStr = prop.Type switch
+            {
+                PropertyType.Bool => "bool",
+                PropertyType.Const => "const",
+                _ => "string"
+            };
+            writer.WriteAttributeString("type", typeStr);
+            writer.WriteAttributeString("value", prop.Value ?? "");
+
+            if (!string.IsNullOrEmpty(prop.Separator))
+                writer.WriteAttributeString("e", "separator", null, prop.Separator);
+            if (!string.IsNullOrEmpty(prop.Suffix))
+                writer.WriteAttributeString("e", "suffix", null, prop.Suffix);
+            if (!string.IsNullOrEmpty(prop.OdSeparator))
+                writer.WriteAttributeString("od", "separator", null, prop.OdSeparator);
+            if (!string.IsNullOrEmpty(prop.OdSuffix))
+                writer.WriteAttributeString("od", "suffix", null, prop.OdSuffix);
+            if (!string.IsNullOrEmpty(prop.MinWidth))
+                writer.WriteAttributeString("xaml", "MinWidth", null, prop.MinWidth);
+            if (!string.IsNullOrEmpty(prop.MinLines))
+                writer.WriteAttributeString("xaml", "MinLines", null, prop.MinLines);
+            if (!string.IsNullOrEmpty(prop.AutoSuggestName))
+                writer.WriteAttributeString("e", "autoSuggestName", null, prop.AutoSuggestName);
+
+            writer.WriteEndElement();
+        }
+
+        private void OpenNamespaceSettings()
+        {
+            var settingsWindow = new NamespaceSettingsWindow(Namespaces, TemplateName);
+            settingsWindow.Owner = Application.Current.MainWindow;
+            if (settingsWindow.ShowDialog() == true)
+            {
+                TemplateName = settingsWindow.TemplateName ?? "";
+            }
+        }
+    }
+}

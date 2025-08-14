@@ -1,0 +1,190 @@
+﻿<Window x:Class="XmlGeneratorNew.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:XmlGeneratorNew.Models"
+        xmlns:converters="clr-namespace:XmlGeneratorNew.Converters"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="XmlGeneratorNew" Height="800" Width="1000"
+        Background="#fafafa"
+        FontFamily="Segoe UI, Segoe UI Symbol, Segoe WP"
+        SnapsToDevicePixels="True">
+
+    <Window.Resources>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="35"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Заголовок -->
+        <TextBlock Grid.Row="0" Text="Генератор XML" FontSize="26" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,5" HorizontalAlignment="Center"/>
+
+        <!-- Пространства имен с кнопкой -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,5">
+            <TextBlock Text="Пространства имен:" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold" FontSize="14"/>
+            <Button Width="100" Height="20" Command="{Binding OpenNamespaceSettingsCommand}">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Text="Настроить"/>
+                    <TextBlock Text="!" Foreground="Red" FontWeight="Bold" Margin="3,0,0,0"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- Основная панель с деревом и редактором -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="350"/>
+                <ColumnDefinition Width="15"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Дерево -->
+            <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="10" BorderBrush="#E0E0E0" BorderThickness="1">
+                <TreeView ItemsSource="{Binding RootItems}" SelectedItemChanged="TreeView_SelectedItemChanged" Background="Transparent" BorderThickness="0">
+                    <TreeView.Resources>
+                        <Style TargetType="TreeViewItem">
+                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                        </Style>
+
+                        <HierarchicalDataTemplate DataType="{x:Type models:SectionItem}" ItemsSource="{Binding Children}">
+                            <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#2196F3" FontSize="15" />
+                        </HierarchicalDataTemplate>
+
+                        <HierarchicalDataTemplate DataType="{x:Type models:GroupItem}" ItemsSource="{Binding Children}">
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="#212121" />
+                        </HierarchicalDataTemplate>
+
+                        <DataTemplate DataType="{x:Type models:PropertyItem}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Name}" FontSize="13" Foreground="#212121" />
+                                <TextBlock Text=" (" Margin="5,0,0,0" Foreground="#757575"/>
+                                <TextBlock Text="{Binding Type}" Foreground="#757575" />
+                                <TextBlock Text=")" Foreground="#757575" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </TreeView.Resources>
+                </TreeView>
+            </Border>
+
+            <!-- Редактор выбранного элемента -->
+            <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="15" BorderBrush="#E0E0E0" BorderThickness="1">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="10">
+                    <Grid>
+                        <ContentControl Content="{Binding SelectedItem}">
+                            <ContentControl.Resources>
+                                <DataTemplate DataType="{x:Type models:SectionItem}">
+                                    <StackPanel>
+                                        <TextBlock Text="Редактирование секции" FontWeight="Bold" FontSize="16" Margin="0,0,0,10" />
+                                        <TextBlock Text="Код (code):" />
+                                        <TextBox Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Имя (name):" />
+                                        <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Заголовок (title):" />
+                                        <TextBox Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,0"/>
+                                        <Button Content="Добавить группу" Width="120" Margin="0,10,0,0"
+                                                Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+
+                                <DataTemplate DataType="{x:Type models:GroupItem}">
+                                    <StackPanel>
+                                        <TextBlock Text="Редактирование группы" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Имя:" />
+                                        <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="e:caption:" />
+                                        <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:caption:" />
+                                        <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="e:layout:" />
+                                        <ComboBox SelectedItem="{Binding Layout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10">
+                                            <ComboBoxItem Content="DockPanel" />
+                                            <ComboBoxItem Content="StackPanel" />
+                                            <ComboBoxItem Content="GroupBox" />
+                                        </ComboBox>
+                                        <TextBlock Text="e:separator:" />
+                                        <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="e:suffix:" />
+                                        <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:separator:" />
+                                        <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:suffix:" />
+                                        <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:groupMode:" />
+                                        <TextBox Text="{Binding OdGroupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                            <Button Content="Добавить свойство" Width="120" Margin="0,0,5,0"
+                                                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Content="Добавить подгруппу" Width="120"
+                                                    Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </DataTemplate>
+
+                                <DataTemplate DataType="{x:Type models:PropertyItem}">
+                                    <StackPanel>
+                                        <TextBlock Text="Редактирование свойства" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Имя (для дерева, не отобразится в metadata):" />
+                                        <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="e:caption:" />
+                                        <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:caption:" />
+                                        <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="type:" />
+                                        <ComboBox SelectedItem="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10">
+                                            <ComboBoxItem Content="String" />
+                                            <ComboBoxItem Content="Bool" />
+                                            <ComboBoxItem Content="Const" />
+                                        </ComboBox>
+                                        <TextBlock Text="value:" />
+                                        <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="e:separator:" />
+                                        <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="e:suffix:" />
+                                        <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:separator:" />
+                                        <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:suffix:" />
+                                        <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="xaml:MinWidth:" />
+                                        <TextBox Text="{Binding MinWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="xaml:MinLines:" />
+                                        <TextBox Text="{Binding MinLines, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="e:autoSuggestName:" />
+                                        <TextBox Text="{Binding AutoSuggestName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ContentControl.Resources>
+                        </ContentControl>
+
+                        <TextBlock Text="Выберите элемент для редактирования"
+                                   FontStyle="Italic" Foreground="Gray"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Visibility="{Binding SelectedItem, Converter={StaticResource NullToVisibilityConverter}}"/>
+                    </Grid>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Кнопки управления -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Добавить секцию" Command="{Binding AddSectionCommand}" Width="120" Margin="0,0,5,0"/>
+            <Button Content="Добавить группу" Command="{Binding AddGroupCommand}" Width="120" Margin="0,0,5,0"/>
+            <Button Content="Добавить свойство" Command="{Binding AddPropertyCommand}" Width="120" Margin="0,0,5,0"/>
+            <Button Content="Удалить" Command="{Binding DeleteCommand}" Width="100" Margin="0,0,5,0"/>
+            <Button Content="Сбросить всё" Command="{Binding ResetCommand}" Width="120" Margin="0,0,5,0"/>
+            <Button Content="Загрузить XML" Command="{Binding LoadCommand}" Width="120" Margin="0,0,5,0"/>
+            <Button Content="Сохранить XML" Command="{Binding SaveCommand}" Width="140"/>
+        </StackPanel>
+    </Grid>
+</Window>
