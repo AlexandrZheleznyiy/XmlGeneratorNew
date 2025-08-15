@@ -280,7 +280,7 @@
                                         <TextBlock Text="od:caption:"/>
                                         <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <TextBlock Text="type:"/>
-                                        <ComboBox SelectedItem="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10">
+                                        <ComboBox SelectedValue="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" Margin="0,0,0,10">
                                             <ComboBoxItem Content="String"/>
                                             <ComboBoxItem Content="Bool"/>
                                             <ComboBoxItem Content="Const"/>
