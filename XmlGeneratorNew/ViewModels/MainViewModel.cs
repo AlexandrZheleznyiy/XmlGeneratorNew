@@ -45,12 +45,22 @@ namespace XmlGeneratorNew.ViewModels
         public IRelayCommand LoadCommand { get; }
         public IRelayCommand SaveCommand { get; }
         public IRelayCommand OpenNamespaceSettingsCommand { get; }
+        public IRelayCommand AddSectionToRootCommand { get; }
+        public IRelayCommand AddGroupToRootCommand { get; }
+        public IRelayCommand AddPropertyToRootCommand { get; }
 
         public MainViewModel()
         {
-            AddSectionCommand = new RelayCommand(AddSection);
-            AddGroupCommand = new RelayCommand(AddGroup);
-            AddPropertyCommand = new RelayCommand(AddProperty);
+            AddSectionToRootCommand = new RelayCommand(AddSectionToRoot);
+            AddGroupToRootCommand = new RelayCommand(AddGroupToRoot);
+            AddPropertyToRootCommand = new RelayCommand(AddPropertyToRoot);
+
+            // --- Команды для редактора (добавляют в выбранный элемент) ---
+            AddGroupCommand = new RelayCommand(AddGroup);     
+            AddPropertyCommand = new RelayCommand(AddProperty); 
+            AddSectionCommand = new RelayCommand(AddSection);   
+
+            // Остальные команды
             DeleteCommand = new RelayCommand(DeleteSelected, CanDelete);
             ResetCommand = new RelayCommand(ResetAll);
             LoadCommand = new RelayCommand(LoadXml);
@@ -94,21 +104,66 @@ namespace XmlGeneratorNew.ViewModels
 
         private void AddProperty()
         {
-            if (SelectedItem is GroupItem selectedGroup)
+            if (SelectedItem is GroupItem group)
             {
-                var newProperty = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
-                selectedGroup.AddProperty(newProperty);
-                SelectedItem = newProperty;
+                var prop = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
+                group.AddProperty(prop);
+                SelectedItem = prop;
+            }
+            else if (SelectedItem is SectionItem section)
+            {
+                var prop = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
+                section.AddProperty(prop);
+                SelectedItem = prop;
             }
             else
             {
-                var newProperty = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
-                RootItems.Add(newProperty);
-                SelectedItem = newProperty;
+                var prop = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
+                RootItems.Add(prop);
+                SelectedItem = prop;
             }
+        }
+        // === Методы для добавления строго в корень ===
+
+        private void AddSectionToRoot()
+        {
+            var newSection = new SectionItem
+            {
+                Name = $"Секция_{RootItems.OfType<SectionItem>().Count() + 1}",
+                IsExpanded = true,
+                IsSelected = true
+            };
+            RootItems.Add(newSection);
+            SelectedItem = newSection;
+        }
+
+        private void AddGroupToRoot()
+        {
+            var newGroup = new GroupItem
+            {
+                Name = $"Группа_{groupIndex++}",
+                IsExpanded = true,
+                IsSelected = true
+            };
+            RootItems.Add(newGroup);
+            SelectedItem = newGroup;
+        }
+
+        private void AddPropertyToRoot()
+        {
+            var newProperty = new PropertyItem
+            {
+                Name = $"Свойство_{propertyIndex++}"
+            };
+            RootItems.Add(newProperty);
+            SelectedItem = newProperty;
         }
 
         private bool CanDelete() => SelectedItem != null;
+        private bool RemovePropertyFromSection(SectionItem section, PropertyItem target)
+        {
+            return section.RemoveProperty(target);
+        }
 
         private void DeleteSelected()
         {
@@ -148,6 +203,11 @@ namespace XmlGeneratorNew.ViewModels
                 {
                     RootItems.Remove(section);
                     removed = true;
+                }
+                // Проверяем, может, это свойство внутри секции?
+                else
+                {
+                    removed = RemovePropertyFromSection(section, (PropertyItem)SelectedItem);
                 }
             }
 
@@ -302,6 +362,13 @@ namespace XmlGeneratorNew.ViewModels
                 section.AddGroup(group);
             }
 
+            // Добавляем поддержку свойств в секции
+            foreach (var propElem in element.Elements("property"))
+            {
+                var prop = ParseProperty(propElem);
+                section.AddProperty(prop);
+            }
+
             return section;
         }
 
@@ -424,6 +491,8 @@ namespace XmlGeneratorNew.ViewModels
                                     writer.WriteAttributeString("title", section.Title);
                                 foreach (var group in section.Groups)
                                     WriteGroup(writer, group);
+                                foreach (var prop in section.Properties)
+                                    WriteProperty(writer, prop);
                                 writer.WriteEndElement();
                                 break;
 

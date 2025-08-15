@@ -45,6 +45,9 @@ namespace XmlGeneratorNew.Models
         private string value = "";
 
         [ObservableProperty]
+        private bool isSelected;
+
+        [ObservableProperty]
         private PropertyType type = PropertyType.String;
     }
 }

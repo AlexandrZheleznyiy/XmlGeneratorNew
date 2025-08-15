@@ -7,8 +7,10 @@ using System.Windows.Media;
 
 namespace XmlGeneratorNew.Converters
 {
-    public class TreeViewItemLevelToVisibilityConverter : IValueConverter
+    public class TreeViewItemLevelToMarginConverter : IValueConverter
     {
+        public double Indent { get; set; } = 16;
+
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is TreeViewItem item)
@@ -20,9 +22,9 @@ namespace XmlGeneratorNew.Converters
                     if (current is TreeViewItem) level++;
                     current = VisualTreeHelper.GetParent(current);
                 }
-                return level > 0 ? Visibility.Visible : Visibility.Collapsed;
+                return new Thickness(level * Indent, 0, 0, 0);
             }
-            return Visibility.Collapsed;
+            return new Thickness(0);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

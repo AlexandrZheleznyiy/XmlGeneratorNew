@@ -20,5 +20,9 @@ namespace XmlGeneratorNew.Views
                 vm.SelectedItem = e.NewValue;
             }
         }
+        private void Expander_Click(object sender, RoutedEventArgs e)
+        {
+            e.Handled = true;
+        }
     }
 }

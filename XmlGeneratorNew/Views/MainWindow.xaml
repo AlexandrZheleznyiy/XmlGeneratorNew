@@ -10,11 +10,151 @@
         Background="#fafafa"
         FontFamily="Segoe UI, Segoe UI Symbol, Segoe WP"
         SnapsToDevicePixels="True">
-
     <Window.Resources>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <converters:TreeViewItemLevelToVisibilityConverter x:Key="LevelToVisibilityConverter"/>
+        <converters:TreeViewItemLevelToMarginConverter x:Key="LevelToMarginConverter" Indent="5"/>
+        <!-- Убедитесь, что конвертер используется -->
+        <!-- Обновлённый стиль для TreeViewItem с линиями вложенности и выделением -->
+        <!-- Обновлённый стиль для TreeViewItem с линиями вложенности, выделением при выборе и наведении -->
+        <!-- Обновлённый стиль для TreeViewItem с линиями вложенности, выделением при выборе и наведении -->
+        <!-- Обновлённый стиль для TreeViewItem с линиями вложенности, выделением при выборе и наведении -->
+        <Style x:Key="TreeViewItemWithLine" TargetType="TreeViewItem">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TreeViewItem">
+                        <StackPanel>
+                            <!-- HeaderHost с возможностью выделения -->
+                            <Border x:Name="HeaderHost" Background="Transparent">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup Name="CommonStates">
+                                        <!-- Состояния для наведения и нормального состояния -->
+                                        <VisualState Name="Normal"/>
+                                        <VisualState Name="MouseOver">
+                                            <Storyboard>
+                                                <ColorAnimation Storyboard.TargetName="HeaderHost"
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                        To="#F0F8FF" Duration="0:0:0.1"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                    <VisualStateGroup Name="SelectionStates">
+                                        <!-- Состояния для выделения -->
+                                        <VisualState Name="Selected">
+                                            <Storyboard>
+                                                <ColorAnimation Storyboard.TargetName="HeaderHost"
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                        To="#D1E8FF" Duration="0:0:0.1"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState Name="SelectedInactive">
+                                            <Storyboard>
+                                                <ColorAnimation Storyboard.TargetName="HeaderHost"
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                        To="#E6E6E6" Duration="0:0:0.1"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState Name="Unselected">
+                                            <!-- При снятии выделения возвращаем к состоянию MouseOver или Normal -->
+                                            <Storyboard>
+                                                <ColorAnimation Storyboard.TargetName="HeaderHost"
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                        To="Transparent" Duration="0:0:0.1"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!--  Вертикальная   линия  -->
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!--  Горизонтальная   линия  (" ножка ") -->
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!-- Expander -->
+                                        <ColumnDefinition Width="*"/>
+                                        <!--  Контент  -->
+                                    </Grid.ColumnDefinitions>
+                                    <!-- Вертикальная линия -->
+                                    <Border Grid.Column="0"
+                                    Width="1"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Stretch"
+                                    Background="#E0E0E0"
+                                    Visibility="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem}, 
+                                                         Converter={StaticResource LevelToVisibilityConverter}}"/>
+                                    <!--  Горизонтальная   линия  (" ножка ") -->
+                                    <Border x:Name="PART_HorizontalLine"
+                                    Grid.Column="1"
+                                    Height="1"
+                                    Width="10"
+                                    Margin="0,0,2,0"
+                                    Background="#9E9E9E"
+                                    VerticalAlignment="Center"/>
+                                    <!-- Expander -->
+                                    <Grid Grid.Column="2" Margin="2,0">
+                                        <ToggleButton x:Name="Expander"
+                                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                              ClickMode="Press"
+                                              Click="Expander_Click">
+                                            <ToggleButton.Style>
+                                                <Style TargetType="ToggleButton">
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="ToggleButton">
+                                                                <Grid Width="16" Height="16" Background="Transparent">
+                                                                    <Path x:Name="ExpandPath"
+                                                                  Data="M 0 4 L 8 12 L 16 4 Z"
+                                                                  Stroke="#9E9E9E"
+                                                                  StrokeThickness="1.5"/>
+                                                                </Grid>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsChecked" Value="True">
+                                                                        <Setter TargetName="ExpandPath" Property="Data" Value="M 4 0 L 12 8 L 4 16 Z"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="ExpandPath" Property="Stroke" Value="#2196F3"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Setter Property="Width" Value="16"/>
+                                                    <Setter Property="Height" Value="16"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                </Style>
+                                            </ToggleButton.Style>
+                                        </ToggleButton>
+                                    </Grid>
+                                    <!--  Контент  -->
+                                    <ContentPresenter Grid.Column="3"
+                                              x:Name="PART_Header"
+                                              ContentSource="Header"
+                                              VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <!--  Дочерние   элементы  -->
+                            <ItemsPresenter x:Name="ItemsHost" Visibility="Collapsed"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
+                                <Setter TargetName="PART_HorizontalLine" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <!-- ИСПРАВЛЕНО: Используем правильный ключ ресурса -->
+            <Setter Property="Margin" Value="{Binding RelativeSource={RelativeSource Self}, Converter={StaticResource LevelToMarginConverter}}"/>
+        </Style>
     </Window.Resources>
-
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -22,13 +162,11 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
-        <!-- Заголовок -->
+        <!--  Заголовок  -->
         <TextBlock Grid.Row="0" Text="Генератор XML" FontSize="26" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,5" HorizontalAlignment="Center"/>
-
-        <!-- Пространства имен с кнопкой -->
+        <!--  Пространства   имен  -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,5">
-            <TextBlock Text="Пространства имен:" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text=" Пространства имен :" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold" FontSize="14"/>
             <Button Width="100" Height="20" Command="{Binding OpenNamespaceSettingsCommand}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <TextBlock Text="Настроить"/>
@@ -36,45 +174,41 @@
                 </StackPanel>
             </Button>
         </StackPanel>
-
-        <!-- Основная панель с деревом и редактором -->
+        <!--  Дерево   и   редактор  -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="350"/>
                 <ColumnDefinition Width="15"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-
-            <!-- Дерево -->
+            <!--  Дерево  -->
             <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="10" BorderBrush="#E0E0E0" BorderThickness="1">
-                <TreeView ItemsSource="{Binding RootItems}" SelectedItemChanged="TreeView_SelectedItemChanged" Background="Transparent" BorderThickness="0">
+                <TreeView ItemsSource="{Binding RootItems}"
+                          SelectedItemChanged="TreeView_SelectedItemChanged"
+                          Background="Transparent"
+                          BorderThickness="0">
+                    <TreeView.ItemContainerStyle>
+                        <Style BasedOn="{StaticResource TreeViewItemWithLine}" TargetType="TreeViewItem"/>
+                    </TreeView.ItemContainerStyle>
                     <TreeView.Resources>
-                        <Style TargetType="TreeViewItem">
-                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
-                        </Style>
-
                         <HierarchicalDataTemplate DataType="{x:Type models:SectionItem}" ItemsSource="{Binding Children}">
-                            <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#2196F3" FontSize="15" />
+                            <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#2196F3" FontSize="15"/>
                         </HierarchicalDataTemplate>
-
                         <HierarchicalDataTemplate DataType="{x:Type models:GroupItem}" ItemsSource="{Binding Children}">
-                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="#212121" />
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="#212121"/>
                         </HierarchicalDataTemplate>
-
                         <DataTemplate DataType="{x:Type models:PropertyItem}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding Name}" FontSize="13" Foreground="#212121" />
+                                <TextBlock Text="{Binding Name}" FontSize="13" Foreground="#212121"/>
                                 <TextBlock Text=" (" Margin="5,0,0,0" Foreground="#757575"/>
-                                <TextBlock Text="{Binding Type}" Foreground="#757575" />
-                                <TextBlock Text=")" Foreground="#757575" />
+                                <TextBlock Text="{Binding Type}" Foreground="#757575"/>
+                                <TextBlock Text=")" Foreground="#757575"/>
                             </StackPanel>
                         </DataTemplate>
                     </TreeView.Resources>
                 </TreeView>
             </Border>
-
-            <!-- Редактор выбранного элемента -->
+            <!--  Редактор  -->
             <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="15" BorderBrush="#E0E0E0" BorderThickness="1">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="10">
                     <Grid>
@@ -82,91 +216,93 @@
                             <ContentControl.Resources>
                                 <DataTemplate DataType="{x:Type models:SectionItem}">
                                     <StackPanel>
-                                        <TextBlock Text="Редактирование секции" FontWeight="Bold" FontSize="16" Margin="0,0,0,10" />
-                                        <TextBlock Text="Код (code):" />
+                                        <TextBlock Text="Редактирование секции" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Код  (code):"/>
                                         <TextBox Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Имя (name):" />
+                                        <TextBlock Text="Имя  (name):"/>
                                         <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Заголовок (title):" />
-                                        <TextBox Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,0"/>
-                                        <Button Content="Добавить группу" Width="120" Margin="0,10,0,0"
-                                                Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding}" />
-                                    </StackPanel>
-                                </DataTemplate>
-
-                                <DataTemplate DataType="{x:Type models:GroupItem}">
-                                    <StackPanel>
-                                        <TextBlock Text="Редактирование группы" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Имя:" />
-                                        <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:caption:" />
-                                        <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:caption:" />
-                                        <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:layout:" />
-                                        <ComboBox SelectedItem="{Binding Layout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10">
-                                            <ComboBoxItem Content="DockPanel" />
-                                            <ComboBoxItem Content="StackPanel" />
-                                            <ComboBoxItem Content="GroupBox" />
-                                        </ComboBox>
-                                        <TextBlock Text="e:separator:" />
-                                        <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:suffix:" />
-                                        <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:separator:" />
-                                        <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:suffix:" />
-                                        <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:groupMode:" />
-                                        <TextBox Text="{Binding OdGroupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Заголовок  (title):"/>
+                                        <TextBox Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                            <Button Content="Добавить свойство" Width="120" Margin="0,0,5,0"
-                                                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}" />
-                                            <Button Content="Добавить подгруппу" Width="120"
+                                            <Button Content=" Добавить группу " Width="120" Margin="0,0,5,0"
                                                     Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}" />
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content=" Добавить свойство " Width="120"
+                                                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </DataTemplate>
-
+                                <DataTemplate DataType="{x:Type models:GroupItem}">
+                                    <StackPanel>
+                                        <TextBlock Text="Редактирование группы" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Имя:"/>
+                                        <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="e:caption:"/>
+                                        <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:caption:"/>
+                                        <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="e:layout:"/>
+                                        <ComboBox SelectedItem="{Binding Layout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10">
+                                            <ComboBoxItem Content="DockPanel"/>
+                                            <ComboBoxItem Content="StackPanel"/>
+                                            <ComboBoxItem Content="GroupBox"/>
+                                        </ComboBox>
+                                        <TextBlock Text="e:separator:"/>
+                                        <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="e:suffix:"/>
+                                        <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:separator:"/>
+                                        <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:suffix:"/>
+                                        <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:groupMode:"/>
+                                        <TextBox Text="{Binding OdGroupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                            <Button Content=" Добавить свойство " Width="120" Margin="0,0,5,0"
+                                                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content=" Добавить подгруппу " Width="120"
+                                                    Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </DataTemplate>
                                 <DataTemplate DataType="{x:Type models:PropertyItem}">
                                     <StackPanel>
-                                        <TextBlock Text="Редактирование свойства" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Имя (для дерева, не отобразится в metadata):" />
+                                        <TextBlock Text=" Редактирование свойства " FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Имя (для дерева, не отобразится в metadata):"/>
                                         <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:caption:" />
+                                        <TextBlock Text="e:caption:"/>
                                         <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:caption:" />
+                                        <TextBlock Text="od:caption:"/>
                                         <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="type:" />
+                                        <TextBlock Text="type:"/>
                                         <ComboBox SelectedItem="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10">
-                                            <ComboBoxItem Content="String" />
-                                            <ComboBoxItem Content="Bool" />
-                                            <ComboBoxItem Content="Const" />
+                                            <ComboBoxItem Content="String"/>
+                                            <ComboBoxItem Content="Bool"/>
+                                            <ComboBoxItem Content="Const"/>
                                         </ComboBox>
-                                        <TextBlock Text="value:" />
+                                        <TextBlock Text="value:"/>
                                         <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:separator:" />
+                                        <TextBlock Text="e:separator:"/>
                                         <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:suffix:" />
+                                        <TextBlock Text="e:suffix:"/>
                                         <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:separator:" />
+                                        <TextBlock Text="od:separator:"/>
                                         <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:suffix:" />
+                                        <TextBlock Text="od:suffix:"/>
                                         <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="xaml:MinWidth:" />
+                                        <TextBlock Text="xaml:MinWidth:"/>
                                         <TextBox Text="{Binding MinWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="xaml:MinLines:" />
+                                        <TextBlock Text="xaml:MinLines:"/>
                                         <TextBox Text="{Binding MinLines, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:autoSuggestName:" />
+                                        <TextBlock Text="e:autoSuggestName:"/>
                                         <TextBox Text="{Binding AutoSuggestName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </ContentControl.Resources>
                         </ContentControl>
-
                         <TextBlock Text="Выберите элемент для редактирования"
                                    FontStyle="Italic" Foreground="Gray"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -175,12 +311,11 @@
                 </ScrollViewer>
             </Border>
         </Grid>
-
-        <!-- Кнопки управления -->
+        <!--  Кнопки   управления  -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button Content="Добавить секцию" Command="{Binding AddSectionCommand}" Width="120" Margin="0,0,5,0"/>
-            <Button Content="Добавить группу" Command="{Binding AddGroupCommand}" Width="120" Margin="0,0,5,0"/>
-            <Button Content="Добавить свойство" Command="{Binding AddPropertyCommand}" Width="120" Margin="0,0,5,0"/>
+            <Button Content="Добавить секцию" Command="{Binding AddSectionToRootCommand}" Width="120" Margin="0,0,5,0"/>
+            <Button Content="Добавить группу" Command="{Binding AddGroupToRootCommand}" Width="120" Margin="0,0,5,0"/>
+            <Button Content="Добавить свойство" Command="{Binding AddPropertyToRootCommand}" Width="120" Margin="0,0,5,0"/>
             <Button Content="Удалить" Command="{Binding DeleteCommand}" Width="100" Margin="0,0,5,0"/>
             <Button Content="Сбросить всё" Command="{Binding ResetCommand}" Width="120" Margin="0,0,5,0"/>
             <Button Content="Загрузить XML" Command="{Binding LoadCommand}" Width="120" Margin="0,0,5,0"/>
