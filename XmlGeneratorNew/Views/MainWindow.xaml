@@ -243,7 +243,9 @@
                                         <TextBlock Text="od:caption:"/>
                                         <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <TextBlock Text="e:layout:"/>
-                                        <ComboBox SelectedItem="{Binding Layout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10">
+                                        <ComboBox SelectedValue="{Binding Layout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+          SelectedValuePath="Content"
+          Margin="0,0,0,10">
                                             <ComboBoxItem Content="DockPanel"/>
                                             <ComboBoxItem Content="StackPanel"/>
                                             <ComboBoxItem Content="GroupBox"/>

@@ -68,6 +68,15 @@ namespace XmlGeneratorNew.ViewModels
             OpenNamespaceSettingsCommand = new RelayCommand(OpenNamespaceSettings);
         }
 
+        partial void OnSelectedItemChanged(object? oldValue, object? newValue)
+        {
+            // Упрощенный вывод в консоль или лог для отладки без ItemBase
+            // Просто выводим тип и стандартное строковое представление
+            System.Diagnostics.Debug.WriteLine($"SelectedItem changed from {oldValue?.GetType().Name} '{oldValue}' to {newValue?.GetType().Name} '{newValue}'");
+
+            // Явно уведомляем команду об изменении
+            DeleteCommand.NotifyCanExecuteChanged();
+        }
         private void AddSection()
         {
             var newSection = new SectionItem
@@ -171,50 +180,39 @@ namespace XmlGeneratorNew.ViewModels
 
             bool removed = false;
 
-            if (SelectedItem is PropertyItem prop)
+            // Проверяем, находится ли элемент непосредственно в RootItems
+            if (RootItems.Contains(SelectedItem))
             {
-                if (RootItems.Contains(prop))
-                {
-                    RootItems.Remove(prop);
-                    removed = true;
-                }
-                else
-                {
-                    removed = RemovePropertyFromGroups(RootItems.OfType<SectionItem>(), prop) ||
-                              RemovePropertyFromGroups(RootItems.OfType<GroupItem>(), prop);
-                }
+                removed = RootItems.Remove(SelectedItem);
             }
-            else if (SelectedItem is GroupItem group)
+            else
             {
-                if (RootItems.Contains(group))
+                // Элемент вложен. Ищем его родителя и удаляем оттуда.
+                if (SelectedItem is PropertyItem prop)
                 {
-                    RootItems.Remove(group);
-                    removed = true;
+                    // Ищем свойство в группах (включая вложенные)
+                    removed = RemovePropertyFromGroups(RootItems.OfType<GroupItem>(), prop);
+                    // Удалена проблемная строка
                 }
-                else
+                else if (SelectedItem is GroupItem group)
                 {
                     removed = RemoveGroup(RootItems.OfType<SectionItem>(), group) ||
                               RemoveGroup(RootItems.OfType<GroupItem>(), group);
                 }
-            }
-            else if (SelectedItem is SectionItem section)
-            {
-                if (RootItems.Contains(section))
+                else if (SelectedItem is SectionItem section)
                 {
-                    RootItems.Remove(section);
-                    removed = true;
-                }
-                // Проверяем, может, это свойство внутри секции?
-                else
-                {
-                    removed = RemovePropertyFromSection(section, (PropertyItem)SelectedItem);
+                    // Этот случай уже должен был быть покрыт RootItems.Contains(section)
+                    removed = RootItems.Remove(section);
                 }
             }
 
             if (removed)
             {
                 SelectedItem = null;
-                DeleteCommand.NotifyCanExecuteChanged();
+                if (DeleteCommand is IRelayCommand relayCommand)
+                {
+                    relayCommand.NotifyCanExecuteChanged();
+                }
             }
         }
 
