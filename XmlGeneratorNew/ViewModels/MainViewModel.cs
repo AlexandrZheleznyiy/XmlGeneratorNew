@@ -15,7 +15,6 @@ namespace XmlGeneratorNew.ViewModels
     public partial class MainViewModel : ObservableObject
     {
         public ObservableCollection<object> RootItems { get; } = new();
-
         public ObservableCollection<NamespaceItem> Namespaces { get; } = new()
         {
             new NamespaceItem { Prefix = "e", Uri = "http://www.sanatorium-is.ru/editor", IsSelected = true },
@@ -34,7 +33,6 @@ namespace XmlGeneratorNew.ViewModels
 
         private int groupIndex = 1;
         private int propertyIndex = 1;
-
         private string currentSavePath = "metadata.xml";
 
         public IRelayCommand AddSectionCommand { get; }
@@ -54,13 +52,11 @@ namespace XmlGeneratorNew.ViewModels
             AddSectionToRootCommand = new RelayCommand(AddSectionToRoot);
             AddGroupToRootCommand = new RelayCommand(AddGroupToRoot);
             AddPropertyToRootCommand = new RelayCommand(AddPropertyToRoot);
-
-            // --- Команды для редактора (добавляют в выбранный элемент) ---
-            AddGroupCommand = new RelayCommand(AddGroup);     
-            AddPropertyCommand = new RelayCommand(AddProperty); 
-            AddSectionCommand = new RelayCommand(AddSection);   
-
-            // Остальные команды
+            // ---  Команды   для   редактора  ( добавляют   в   выбранный   элемент ) ---
+            AddGroupCommand = new RelayCommand(AddGroup);
+            AddPropertyCommand = new RelayCommand(AddProperty);
+            AddSectionCommand = new RelayCommand(AddSection);
+            //  Остальные   команды
             DeleteCommand = new RelayCommand(DeleteSelected, CanDelete);
             ResetCommand = new RelayCommand(ResetAll);
             LoadCommand = new RelayCommand(LoadXml);
@@ -70,18 +66,18 @@ namespace XmlGeneratorNew.ViewModels
 
         partial void OnSelectedItemChanged(object? oldValue, object? newValue)
         {
-            // Упрощенный вывод в консоль или лог для отладки без ItemBase
-            // Просто выводим тип и стандартное строковое представление
-            System.Diagnostics.Debug.WriteLine($"SelectedItem changed from {oldValue?.GetType().Name} '{oldValue}' to {newValue?.GetType().Name} '{newValue}'");
-
-            // Явно уведомляем команду об изменении
+            System.Diagnostics.Debug.WriteLine($"[VM] SelectedItem changed from {oldValue?.GetType().Name ?? "null"} to {newValue?.GetType().Name ?? "null"}");
             DeleteCommand.NotifyCanExecuteChanged();
+            AddGroupCommand.NotifyCanExecuteChanged();
+            AddPropertyCommand.NotifyCanExecuteChanged();
+            AddSectionCommand.NotifyCanExecuteChanged();
         }
+
         private void AddSection()
         {
             var newSection = new SectionItem
             {
-                Name = $"Секция_{RootItems.OfType<SectionItem>().Count() + 1}",
+                Name = $"Секция _{RootItems.OfType<SectionItem>().Count() + 1}",
                 IsExpanded = true,
                 IsSelected = true
             };
@@ -93,19 +89,19 @@ namespace XmlGeneratorNew.ViewModels
         {
             if (SelectedItem is SectionItem selectedSection)
             {
-                var newGroup = new GroupItem { Name = $"Группа_{groupIndex++}", IsExpanded = true, IsSelected = true };
+                var newGroup = new GroupItem { Name = $"Группа _{groupIndex++}", IsExpanded = true, IsSelected = true };
                 selectedSection.AddGroup(newGroup);
                 SelectedItem = newGroup;
             }
             else if (SelectedItem is GroupItem selectedGroup)
             {
-                var newSubGroup = new GroupItem { Name = $"Подгруппа_{groupIndex++}", IsExpanded = true, IsSelected = true };
+                var newSubGroup = new GroupItem { Name = $"Подгруппа _{groupIndex++}", IsExpanded = true, IsSelected = true };
                 selectedGroup.AddGroup(newSubGroup);
                 SelectedItem = newSubGroup;
             }
             else
             {
-                var newGroup = new GroupItem { Name = $"Группа_{groupIndex++}", IsExpanded = true, IsSelected = true };
+                var newGroup = new GroupItem { Name = $"Группа _{groupIndex++}", IsExpanded = true, IsSelected = true };
                 RootItems.Add(newGroup);
                 SelectedItem = newGroup;
             }
@@ -115,30 +111,30 @@ namespace XmlGeneratorNew.ViewModels
         {
             if (SelectedItem is GroupItem group)
             {
-                var prop = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
+                var prop = new PropertyItem { Name = $"Свойство _{propertyIndex++}" };
                 group.AddProperty(prop);
                 SelectedItem = prop;
             }
             else if (SelectedItem is SectionItem section)
             {
-                var prop = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
+                var prop = new PropertyItem { Name = $"Свойство _{propertyIndex++}" };
                 section.AddProperty(prop);
                 SelectedItem = prop;
             }
             else
             {
-                var prop = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
+                var prop = new PropertyItem { Name = $"Свойство _{propertyIndex++}" };
                 RootItems.Add(prop);
                 SelectedItem = prop;
             }
         }
-        // === Методы для добавления строго в корень ===
 
+        // === Методы для добавления строго в корень ===
         private void AddSectionToRoot()
         {
             var newSection = new SectionItem
             {
-                Name = $"Секция_{RootItems.OfType<SectionItem>().Count() + 1}",
+                Name = $"Секция _{RootItems.OfType<SectionItem>().Count() + 1}",
                 IsExpanded = true,
                 IsSelected = true
             };
@@ -150,7 +146,7 @@ namespace XmlGeneratorNew.ViewModels
         {
             var newGroup = new GroupItem
             {
-                Name = $"Группа_{groupIndex++}",
+                Name = $"Группа _{groupIndex++}",
                 IsExpanded = true,
                 IsSelected = true
             };
@@ -162,58 +158,347 @@ namespace XmlGeneratorNew.ViewModels
         {
             var newProperty = new PropertyItem
             {
-                Name = $"Свойство_{propertyIndex++}"
+                Name = $"Свойство _{propertyIndex++}"
             };
             RootItems.Add(newProperty);
             SelectedItem = newProperty;
         }
 
         private bool CanDelete() => SelectedItem != null;
-        private bool RemovePropertyFromSection(SectionItem section, PropertyItem target)
-        {
-            return section.RemoveProperty(target);
-        }
 
         private void DeleteSelected()
         {
             if (SelectedItem == null) return;
 
+            object? itemToRemove = SelectedItem; // Сохраняем ссылку на удаляемый элемент
             bool removed = false;
+            object? parentContainer = null; // Для отслеживания родителя вложенных элементов
 
             // Проверяем, находится ли элемент непосредственно в RootItems
             if (RootItems.Contains(SelectedItem))
             {
                 removed = RootItems.Remove(SelectedItem);
+
+                // ВАЖНО: После удаления элемента верхнего уровня сбрасываем IsSelected у всех оставшихся элементов верхнего уровня
+                if (removed)
+                {
+                    foreach (var item in RootItems)
+                    {
+                        if (item is SectionItem si) si.IsSelected = false;
+                        if (item is GroupItem gi) gi.IsSelected = false;
+                        if (item is PropertyItem pi) pi.IsSelected = false;
+                    }
+                }
             }
             else
             {
                 // Элемент вложен. Ищем его родителя и удаляем оттуда.
                 if (SelectedItem is PropertyItem prop)
                 {
-                    // Ищем свойство в группах (включая вложенные)
-                    removed = RemovePropertyFromGroups(RootItems.OfType<GroupItem>(), prop);
-                    // Удалена проблемная строка
+                    // Ищем свойство в группах (включая вложенные) и запоминаем родителя
+                    parentContainer = FindParentOfPropertyAndRemove(prop, out removed);
                 }
                 else if (SelectedItem is GroupItem group)
                 {
-                    removed = RemoveGroup(RootItems.OfType<SectionItem>(), group) ||
-                              RemoveGroup(RootItems.OfType<GroupItem>(), group);
+                    // Ищем группу и запоминаем родителя
+                    parentContainer = FindParentOfGroupAndRemove(group, out removed);
                 }
                 else if (SelectedItem is SectionItem section)
                 {
                     // Этот случай уже должен был быть покрыт RootItems.Contains(section)
                     removed = RootItems.Remove(section);
+                    // ВАЖНО: Сбрасываем IsSelected у оставшихся элементов верхнего уровня
+                    if (removed)
+                    {
+                        foreach (var item in RootItems)
+                        {
+                            if (item is SectionItem si) si.IsSelected = false;
+                            if (item is GroupItem gi) gi.IsSelected = false;
+                            if (item is PropertyItem pi) pi.IsSelected = false;
+                        }
+                    }
                 }
             }
 
             if (removed)
             {
-                SelectedItem = null;
-                if (DeleteCommand is IRelayCommand relayCommand)
+                // ВАЖНО: Сбрасываем IsSelected у удаленного элемента
+                if (itemToRemove is ObservableObject observableItem)
                 {
-                    relayCommand.NotifyCanExecuteChanged();
+                    if (observableItem is SectionItem si) si.IsSelected = false;
+                    if (observableItem is GroupItem gi) gi.IsSelected = false;
+                    // PropertyItem не имеет IsSelected в текущей модели
+                }
+
+                // ВАЖНО: Если удаляли из контейнера, сбрасываем IsSelected у родителя и "тормошим" его состояние
+                if (parentContainer is ObservableObject parentObservable)
+                {
+                    if (parentObservable is SectionItem parentSection)
+                    {
+                        parentSection.IsSelected = false;
+                        // Принудительно "тормошим" состояние для обновления UI
+                        parentSection.IsExpanded = !parentSection.IsExpanded;
+                        parentSection.IsExpanded = !parentSection.IsExpanded;
+                    }
+                    if (parentObservable is GroupItem parentGroup)
+                    {
+                        parentGroup.IsSelected = false;
+                        // Принудительно "тормошим" состояние для обновления UI
+                        parentGroup.IsExpanded = !parentGroup.IsExpanded;
+                        parentGroup.IsExpanded = !parentGroup.IsExpanded;
+                    }
+                }
+
+                // Сброс SelectedItem во ViewModel
+                SelectedItem = null;
+
+                // Уведомляем команды
+                DeleteCommand.NotifyCanExecuteChanged();
+                AddGroupCommand.NotifyCanExecuteChanged();
+                AddPropertyCommand.NotifyCanExecuteChanged();
+                AddSectionCommand.NotifyCanExecuteChanged();
+            }
+        }
+        private object? FindParentOfPropertyAndRemove(PropertyItem target, out bool removed)
+        {
+            removed = false;
+
+            // Поиск в группах внутри секций
+            foreach (var section in RootItems.OfType<SectionItem>())
+            {
+                foreach (var group in section.Groups)
+                {
+                    if (group.Properties.Contains(target))
+                    {
+                        removed = group.RemoveChild(target);
+                        return group; // Возвращаем родителя (GroupItem)
+                    }
+                    var foundParent = FindPropertyInGroupAndRemove(target, group);
+                    if (foundParent != null)
+                    {
+                        return foundParent; // Родитель уже определен внутри рекурсии
+                    }
                 }
             }
+
+            // Поиск в корневых группах
+            foreach (var group in RootItems.OfType<GroupItem>())
+            {
+                if (group.Properties.Contains(target))
+                {
+                    removed = group.RemoveChild(target);
+                    return group; // Возвращаем родителя (GroupItem)
+                }
+                var foundParent = FindPropertyInGroupAndRemove(target, group);
+                if (foundParent != null)
+                {
+                    return foundParent; // Родитель уже определен внутри рекурсии
+                }
+            }
+
+            // Поиск в секциях (свойства напрямую в секциях)
+            foreach (var section in RootItems.OfType<SectionItem>())
+            {
+                if (section.Properties.Contains(target))
+                {
+                    removed = section.RemoveProperty(target);
+                    return section; // Возвращаем родителя (SectionItem)
+                }
+            }
+
+            // Поиск в корне
+            if (RootItems.Contains(target))
+            {
+                removed = RootItems.Remove(target);
+                return null; // Родитель корневого элемента - это сам RootItems
+            }
+
+            return null;
+        }
+
+        private bool RemovePropertyFromSections(IEnumerable<SectionItem> sections, PropertyItem target)
+        {
+            foreach (var section in sections)
+            {
+                if (section.Properties.Contains(target))
+                {
+                    return section.RemoveProperty(target);
+                }
+            }
+            return false;
+        }
+
+        // Вспомогательный метод для поиска и удаления свойства с определением родителя
+        private object? FindAndRemoveProperty(PropertyItem target, out bool removed)
+        {
+            removed = false;
+
+            // Поиск в группах внутри секций
+            foreach (var section in RootItems.OfType<SectionItem>())
+            {
+                foreach (var group in section.Groups)
+                {
+                    if (group.Properties.Contains(target))
+                    {
+                        removed = group.RemoveChild(target);
+                        return group; // Возвращаем родителя (GroupItem)
+                    }
+                    var foundParent = FindPropertyInGroupAndRemove(target, group);
+                    if (foundParent != null)
+                    {
+                        return foundParent; // Родитель уже определен внутри рекурсии
+                    }
+                }
+            }
+
+            // Поиск в корневых группах
+            foreach (var group in RootItems.OfType<GroupItem>())
+            {
+                if (group.Properties.Contains(target))
+                {
+                    removed = group.RemoveChild(target);
+                    return group; // Возвращаем родителя (GroupItem)
+                }
+                var foundParent = FindPropertyInGroupAndRemove(target, group);
+                if (foundParent != null)
+                {
+                    return foundParent; // Родитель уже определен внутри рекурсии
+                }
+            }
+
+            // Поиск в секциях (свойства напрямую в секциях)
+            foreach (var section in RootItems.OfType<SectionItem>())
+            {
+                if (section.Properties.Contains(target))
+                {
+                    removed = section.RemoveProperty(target);
+                    return section; // Возвращаем родителя (SectionItem)
+                }
+            }
+
+            // Поиск в корне
+            if (RootItems.Contains(target))
+            {
+                removed = RootItems.Remove(target);
+                return null; // Родитель корневого элемента - это сам RootItems
+            }
+
+            return null;
+        }
+
+        // Рекурсивный поиск и удаление свойства в группе с определением родителя
+        private GroupItem? FindPropertyInGroupAndRemove(PropertyItem target, GroupItem group)
+        {
+            foreach (var subGroup in group.Groups)
+            {
+                if (subGroup.Properties.Contains(target))
+                {
+                    subGroup.RemoveChild(target);
+                    return subGroup; // Возвращаем родителя
+                }
+
+                var found = FindPropertyInGroupAndRemove(target, subGroup);
+                if (found != null)
+                    return found;
+            }
+            return null;
+        }
+        private object? FindParentOfGroupAndRemove(GroupItem target, out bool removed)
+        {
+            removed = false;
+
+            // Поиск в секциях
+            foreach (var section in RootItems.OfType<SectionItem>())
+            {
+                if (section.Groups.Contains(target))
+                {
+                    removed = section.RemoveGroup(target);
+                    return section; // Возвращаем родителя (SectionItem)
+                }
+
+                var foundParent = FindGroupInGroupsAndRemove(target, section.Groups);
+                if (foundParent != null)
+                {
+                    return foundParent; // Родитель уже определен внутри рекурсии
+                }
+            }
+
+            // Поиск в группах
+            foreach (var group in RootItems.OfType<GroupItem>())
+            {
+                if (group.Groups.Contains(target))
+                {
+                    removed = group.RemoveChild(target);
+                    return group; // Возвращаем родителя (GroupItem)
+                }
+
+                var foundParent = FindGroupInGroupsAndRemove(target, group.Groups);
+                if (foundParent != null)
+                {
+                    return foundParent; // Родитель уже определен внутри рекурсии
+                }
+            }
+
+            return null;
+        }
+
+
+        // Вспомогательный метод для поиска и удаления группы с определением родителя
+        private object? FindAndRemoveGroup(GroupItem target, out bool removed)
+        {
+            removed = false;
+
+            // Поиск в секциях
+            foreach (var section in RootItems.OfType<SectionItem>())
+            {
+                if (section.Groups.Contains(target))
+                {
+                    removed = section.RemoveGroup(target);
+                    return section; // Возвращаем родителя (SectionItem)
+                }
+
+                var foundParent = FindGroupInGroupsAndRemove(target, section.Groups);
+                if (foundParent != null)
+                {
+                    return foundParent; // Родитель уже определен внутри рекурсии
+                }
+            }
+
+            // Поиск в группах
+            foreach (var group in RootItems.OfType<GroupItem>())
+            {
+                if (group.Groups.Contains(target))
+                {
+                    removed = group.RemoveChild(target);
+                    return group; // Возвращаем родителя (GroupItem)
+                }
+
+                var foundParent = FindGroupInGroupsAndRemove(target, group.Groups);
+                if (foundParent != null)
+                {
+                    return foundParent; // Родитель уже определен внутри рекурсии
+                }
+            }
+
+            return null;
+        }
+
+        // Рекурсивный поиск и удаление группы в группах с определением родителя
+        private GroupItem? FindGroupInGroupsAndRemove(GroupItem target, ObservableCollection<GroupItem> groups)
+        {
+            foreach (var group in groups)
+            {
+                if (group.Groups.Contains(target))
+                {
+                    group.RemoveChild(target);
+                    return group; // Возвращаем родителя
+                }
+
+                var found = FindGroupInGroupsAndRemove(target, group.Groups);
+                if (found != null)
+                    return found;
+            }
+            return null;
         }
 
         private bool RemoveGroup(IEnumerable<SectionItem> sections, GroupItem target)
@@ -270,7 +555,6 @@ namespace XmlGeneratorNew.ViewModels
         {
             if (group.RemoveChild(target))
                 return true;
-
             foreach (var subgroup in group.Groups)
             {
                 if (RemovePropertyFromGroup(subgroup, target)) return true;
@@ -283,7 +567,6 @@ namespace XmlGeneratorNew.ViewModels
             var result = MessageBox.Show("Вы уверены, что хотите очистить все данные и начать с нуля?",
                                          "Подтверждение сброса",
                                          MessageBoxButton.YesNo, MessageBoxImage.Warning);
-
             if (result == MessageBoxResult.Yes)
             {
                 RootItems.Clear();
@@ -301,12 +584,10 @@ namespace XmlGeneratorNew.ViewModels
                 {
                     groupIndex = 1;
                     propertyIndex = 1;
-
                     var loadedItems = LoadXmlToModel(openFileDialog.FileName);
                     RootItems.Clear();
                     foreach (var item in loadedItems)
                         RootItems.Add(item);
-
                     MessageBox.Show("XML шаблон успешно загружен.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (System.Exception ex)
@@ -320,13 +601,10 @@ namespace XmlGeneratorNew.ViewModels
         {
             var rootItems = new ObservableCollection<object>();
             var doc = XDocument.Load(filePath);
-
             var root = doc.Root;
             if (root == null || root.Name.LocalName != "consultation")
                 throw new System.Exception("Некорректный XML: корневой элемент должен быть <consultation>");
-
             TemplateName = (string?)root.Attribute("name") ?? "";
-
             foreach (var element in root.Elements())
             {
                 switch (element.Name.LocalName)
@@ -353,20 +631,17 @@ namespace XmlGeneratorNew.ViewModels
                 Name = (string?)element.Attribute("name") ?? "",
                 Title = (string?)element.Attribute("title") ?? ""
             };
-
             foreach (var groupElem in element.Elements("group"))
             {
                 var group = ParseGroup(groupElem);
                 section.AddGroup(group);
             }
-
-            // Добавляем поддержку свойств в секции
+            //  Добавляем   поддержку   свойств   в   секции
             foreach (var propElem in element.Elements("property"))
             {
                 var prop = ParseProperty(propElem);
                 section.AddProperty(prop);
             }
-
             return section;
         }
 
@@ -374,10 +649,9 @@ namespace XmlGeneratorNew.ViewModels
         {
             string caption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/editor")) ?? "";
             string nameAttr = (string?)element.Attribute("name") ?? "";
-
             var group = new GroupItem
             {
-                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Группа_{groupIndex++}"),
+                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Группа _{groupIndex++}"),
                 Caption = caption,
                 OdCaption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 Layout = (string?)element.Attribute(XName.Get("layout", "http://www.sanatorium-is.ru/editor")) ?? "DockPanel",
@@ -387,7 +661,6 @@ namespace XmlGeneratorNew.ViewModels
                 OdSuffix = (string?)element.Attribute(XName.Get("suffix", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 OdGroupMode = (string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument")) ?? ""
             };
-
             foreach (var child in element.Elements())
             {
                 switch (child.Name.LocalName)
@@ -402,7 +675,6 @@ namespace XmlGeneratorNew.ViewModels
                         break;
                 }
             }
-
             return group;
         }
 
@@ -410,10 +682,9 @@ namespace XmlGeneratorNew.ViewModels
         {
             string caption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/editor")) ?? "";
             string nameAttr = (string?)element.Attribute("name") ?? "";
-
             var prop = new PropertyItem
             {
-                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Свойство_{propertyIndex++}"),
+                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Свойство _{propertyIndex++}"),
                 Caption = caption,
                 OdCaption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 Separator = (string?)element.Attribute(XName.Get("separator", "http://www.sanatorium-is.ru/editor")) ?? "",
@@ -425,16 +696,13 @@ namespace XmlGeneratorNew.ViewModels
                 AutoSuggestName = (string?)element.Attribute(XName.Get("autoSuggestName", "http://www.sanatorium-is.ru/editor")) ?? "",
                 Value = (string?)element.Attribute("value") ?? ""
             };
-
             string typeStr = (string?)element.Attribute("type") ?? "string";
-
             prop.Type = typeStr switch
             {
                 "bool" => PropertyType.Bool,
                 "const" => PropertyType.Const,
                 _ => PropertyType.String
             };
-
             return prop;
         }
 
@@ -445,11 +713,9 @@ namespace XmlGeneratorNew.ViewModels
                 Filter = "XML файлы (*.xml)|*.xml|Все файлы (*.*)|*.*",
                 FileName = currentSavePath
             };
-
             if (saveFileDialog.ShowDialog() == true)
             {
                 currentSavePath = saveFileDialog.FileName;
-
                 try
                 {
                     var settings = new XmlWriterSettings
@@ -459,12 +725,9 @@ namespace XmlGeneratorNew.ViewModels
                         NewLineChars = "\r\n",
                         Encoding = System.Text.Encoding.UTF8
                     };
-
                     using var writer = XmlWriter.Create(currentSavePath, settings);
-
                     writer.WriteStartDocument();
                     writer.WriteStartElement("consultation");
-
                     foreach (var ns in Namespaces.Where(n => n.IsSelected))
                     {
                         if (string.IsNullOrEmpty(ns.Prefix))
@@ -472,10 +735,8 @@ namespace XmlGeneratorNew.ViewModels
                         else
                             writer.WriteAttributeString("xmlns", ns.Prefix, null, ns.Uri);
                     }
-
                     if (!string.IsNullOrWhiteSpace(templateName))
                         writer.WriteAttributeString("name", templateName);
-
                     foreach (var item in RootItems)
                     {
                         switch (item)
@@ -493,21 +754,17 @@ namespace XmlGeneratorNew.ViewModels
                                     WriteProperty(writer, prop);
                                 writer.WriteEndElement();
                                 break;
-
                             case GroupItem group:
                                 WriteGroup(writer, group);
                                 break;
-
                             case PropertyItem prop:
                                 WriteProperty(writer, prop);
                                 break;
                         }
                     }
-
                     writer.WriteEndElement();
                     writer.WriteEndDocument();
-
-                    MessageBox.Show($"XML успешно сохранён в:\n{currentSavePath}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"XML успешно сохранён в :\n{currentSavePath}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (System.Exception ex)
                 {
@@ -519,7 +776,6 @@ namespace XmlGeneratorNew.ViewModels
         private void WriteGroup(XmlWriter writer, GroupItem group)
         {
             writer.WriteStartElement("group");
-
             if (!string.IsNullOrEmpty(group.Caption))
                 writer.WriteAttributeString("e", "caption", null, group.Caption);
             if (!string.IsNullOrEmpty(group.OdCaption))
@@ -536,13 +792,10 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("od", "suffix", null, group.OdSuffix);
             if (!string.IsNullOrEmpty(group.OdGroupMode))
                 writer.WriteAttributeString("od", "groupMode", null, group.OdGroupMode);
-
             foreach (var prop in group.Properties)
                 WriteProperty(writer, prop);
-
             foreach (var subgroup in group.Groups)
                 WriteGroup(writer, subgroup);
-
             writer.WriteEndElement();
         }
 
@@ -553,7 +806,6 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("e", "caption", null, prop.Caption);
             if (!string.IsNullOrEmpty(prop.OdCaption))
                 writer.WriteAttributeString("od", "caption", null, prop.OdCaption);
-
             string typeStr = prop.Type switch
             {
                 PropertyType.Bool => "bool",
@@ -562,7 +814,6 @@ namespace XmlGeneratorNew.ViewModels
             };
             writer.WriteAttributeString("type", typeStr);
             writer.WriteAttributeString("value", prop.Value ?? "");
-
             if (!string.IsNullOrEmpty(prop.Separator))
                 writer.WriteAttributeString("e", "separator", null, prop.Separator);
             if (!string.IsNullOrEmpty(prop.Suffix))
@@ -577,7 +828,6 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("xaml", "MinLines", null, prop.MinLines);
             if (!string.IsNullOrEmpty(prop.AutoSuggestName))
                 writer.WriteAttributeString("e", "autoSuggestName", null, prop.AutoSuggestName);
-
             writer.WriteEndElement();
         }
 

@@ -40,7 +40,6 @@ namespace XmlGeneratorNew.Models
 
         public ObservableCollection<GroupItem> Groups { get; } = new();
         public ObservableCollection<PropertyItem> Properties { get; } = new();
-
         public ObservableCollection<object> Children { get; } = new();
 
         public GroupItem()
@@ -67,9 +66,7 @@ namespace XmlGeneratorNew.Models
             bool removed = false;
             if (child is GroupItem g) removed = Groups.Remove(g);
             else if (child is PropertyItem p) removed = Properties.Remove(p);
-
             if (removed) Children.Remove(child);
-
             return removed;
         }
     }
