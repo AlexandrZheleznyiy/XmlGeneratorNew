@@ -33,6 +33,9 @@ namespace XmlGeneratorNew.Models
         private string odGroupMode = "";
 
         [ObservableProperty]
+        private bool odGroupModeIsParagraph = false;
+
+        [ObservableProperty]
         private bool isExpanded;
 
         [ObservableProperty]

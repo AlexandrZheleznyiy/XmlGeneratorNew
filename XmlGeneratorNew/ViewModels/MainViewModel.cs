@@ -669,7 +669,7 @@ namespace XmlGeneratorNew.ViewModels
             string nameAttr = (string?)element.Attribute("name") ?? "";
             var group = new GroupItem
             {
-                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Группа _{groupIndex++}"),
+                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Группа_{groupIndex++}"),
                 Caption = caption,
                 OdCaption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 Layout = (string?)element.Attribute(XName.Get("layout", "http://www.sanatorium-is.ru/editor")) ?? "DockPanel",
@@ -679,6 +679,11 @@ namespace XmlGeneratorNew.ViewModels
                 OdSuffix = (string?)element.Attribute(XName.Get("suffix", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 OdGroupMode = (string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument")) ?? ""
             };
+
+            // Добавляем проверку для нового свойства
+            group.OdGroupModeIsParagraph = !string.IsNullOrEmpty((string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument"))) &&
+                                           ((string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument")) == "paragraph");
+
             foreach (var child in element.Elements())
             {
                 switch (child.Name.LocalName)
@@ -808,8 +813,10 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("od", "separator", null, group.OdSeparator);
             if (!string.IsNullOrEmpty(group.OdSuffix))
                 writer.WriteAttributeString("od", "suffix", null, group.OdSuffix);
-            if (!string.IsNullOrEmpty(group.OdGroupMode))
-                writer.WriteAttributeString("od", "groupMode", null, group.OdGroupMode);
+
+            if (group.OdGroupModeIsParagraph)
+                writer.WriteAttributeString("od", "groupMode", null, "paragraph");
+
             foreach (var prop in group.Properties)
                 WriteProperty(writer, prop);
             foreach (var subgroup in group.Groups)

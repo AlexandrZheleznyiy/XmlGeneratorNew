@@ -203,8 +203,8 @@
                                         <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <TextBlock Text="e:layout:"/>
                                         <ComboBox SelectedValue="{Binding Layout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  SelectedValuePath="Content"
-                                                  Margin="0,0,0,10">
+                  SelectedValuePath="Content"
+                  Margin="0,0,0,10">
                                             <ComboBoxItem Content="DockPanel"/>
                                             <ComboBoxItem Content="StackPanel"/>
                                             <ComboBoxItem Content="GroupBox"/>
@@ -217,49 +217,18 @@
                                         <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <TextBlock Text="od:suffix:"/>
                                         <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:groupMode:"/>
-                                        <TextBox Text="{Binding OdGroupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="od:groupMode:"/>
+                                            <CheckBox IsChecked="{Binding OdGroupModeIsParagraph, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="paragraph" Margin="5,0,0,0"/>
+                                        </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                             <Button Content="Добавить свойство" Width="120" Margin="0,0,5,0"
-                                                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
+                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    CommandParameter="{Binding}"/>
                                             <Button Content="Добавить подгруппу" Width="120"
-                                                    Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
+                    Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    CommandParameter="{Binding}"/>
                                         </StackPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                                <DataTemplate DataType="{x:Type models:PropertyItem}">
-                                    <StackPanel>
-                                        <TextBlock Text="Редактирование свойства" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Имя (для дерева, не отобразится в metadata):"/>
-                                        <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:caption:"/>
-                                        <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:caption:"/>
-                                        <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="type:"/>
-                                        <ComboBox SelectedValue="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" Margin="0,0,0,10">
-                                            <ComboBoxItem Content="String"/>
-                                            <ComboBoxItem Content="Bool"/>
-                                            <ComboBoxItem Content="Const"/>
-                                        </ComboBox>
-                                        <TextBlock Text="value:"/>
-                                        <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:separator:"/>
-                                        <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:suffix:"/>
-                                        <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:separator:"/>
-                                        <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:suffix:"/>
-                                        <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="xaml:MinWidth:"/>
-                                        <TextBox Text="{Binding MinWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="xaml:MinLines:"/>
-                                        <TextBox Text="{Binding MinLines, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:autoSuggestName:"/>
-                                        <TextBox Text="{Binding AutoSuggestName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </ContentControl.Resources>
