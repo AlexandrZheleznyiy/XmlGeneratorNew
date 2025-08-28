@@ -36,6 +36,18 @@ namespace XmlGeneratorNew.Models
         private bool odGroupModeIsParagraph = false;
 
         [ObservableProperty]
+        private string eCaptionStyle = "";
+
+        [ObservableProperty]
+        private bool eCaptionStyleIsGroupHeader = false;
+
+        [ObservableProperty]
+        private string odGroupStyle = "";
+
+        [ObservableProperty]
+        private bool odGroupStyleIsNewParagraphBoldHeader = false;
+
+        [ObservableProperty]
         private bool isExpanded;
 
         [ObservableProperty]

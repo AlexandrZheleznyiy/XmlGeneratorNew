@@ -647,14 +647,15 @@ namespace XmlGeneratorNew.ViewModels
             {
                 Code = (string?)element.Attribute("code") ?? "",
                 Name = (string?)element.Attribute("name") ?? "",
-                Title = (string?)element.Attribute("title") ?? ""
+                Title = (string?)element.Attribute("title") ?? "",
+                Semd = (string?)element.Attribute("semd") ?? ""
             };
             foreach (var groupElem in element.Elements("group"))
             {
                 var group = ParseGroup(groupElem);
                 section.AddGroup(group);
             }
-            //  Добавляем   поддержку   свойств   в   секции
+            // Добавляем поддержку свойств в секции
             foreach (var propElem in element.Elements("property"))
             {
                 var prop = ParseProperty(propElem);
@@ -677,12 +678,20 @@ namespace XmlGeneratorNew.ViewModels
                 Suffix = (string?)element.Attribute(XName.Get("suffix", "http://www.sanatorium-is.ru/editor")) ?? "",
                 OdSeparator = (string?)element.Attribute(XName.Get("separator", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 OdSuffix = (string?)element.Attribute(XName.Get("suffix", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
-                OdGroupMode = (string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument")) ?? ""
+                OdGroupMode = (string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
+                ECaptionStyle = (string?)element.Attribute(XName.Get("captionStyle", "http://www.sanatorium-is.ru/editor")) ?? "",
+                OdGroupStyle = (string?)element.Attribute(XName.Get("groupStyle", "http://www.sanatorium-is.ru/officeDocument")) ?? ""
             };
 
-            // Добавляем проверку для нового свойства
+            // Добавляем проверку для новых свойств
             group.OdGroupModeIsParagraph = !string.IsNullOrEmpty((string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument"))) &&
                                            ((string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument")) == "paragraph");
+
+            group.ECaptionStyleIsGroupHeader = !string.IsNullOrEmpty((string?)element.Attribute(XName.Get("captionStyle", "http://www.sanatorium-is.ru/editor"))) &&
+                                               ((string?)element.Attribute(XName.Get("captionStyle", "http://www.sanatorium-is.ru/editor")) == "GroupHeader");
+
+            group.OdGroupStyleIsNewParagraphBoldHeader = !string.IsNullOrEmpty((string?)element.Attribute(XName.Get("groupStyle", "http://www.sanatorium-is.ru/officeDocument"))) &&
+                                                         ((string?)element.Attribute(XName.Get("groupStyle", "http://www.sanatorium-is.ru/officeDocument")) == "NewParagraphBoldHeader");
 
             foreach (var child in element.Elements())
             {
@@ -707,7 +716,7 @@ namespace XmlGeneratorNew.ViewModels
             string nameAttr = (string?)element.Attribute("name") ?? "";
             var prop = new PropertyItem
             {
-                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Свойство _{propertyIndex++}"),
+                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Свойство_{propertyIndex++}"),
                 Caption = caption,
                 OdCaption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 Separator = (string?)element.Attribute(XName.Get("separator", "http://www.sanatorium-is.ru/editor")) ?? "",
@@ -717,7 +726,8 @@ namespace XmlGeneratorNew.ViewModels
                 MinWidth = (string?)element.Attribute(XName.Get("MinWidth", "http://schemas.microsoft.com/winfx/2006/xaml/presentation")) ?? "",
                 MinLines = (string?)element.Attribute(XName.Get("MinLines", "http://schemas.microsoft.com/winfx/2006/xaml/presentation")) ?? "",
                 AutoSuggestName = (string?)element.Attribute(XName.Get("autoSuggestName", "http://www.sanatorium-is.ru/editor")) ?? "",
-                Value = (string?)element.Attribute("value") ?? ""
+                Value = (string?)element.Attribute("value") ?? "",
+                Semd = (string?)element.Attribute("semd") ?? ""
             };
             string typeStr = (string?)element.Attribute("type") ?? "string";
             prop.Type = typeStr switch
@@ -733,7 +743,7 @@ namespace XmlGeneratorNew.ViewModels
         {
             var saveFileDialog = new SaveFileDialog
             {
-                Filter = "XML файлы (*.xml)|*.xml|Все файлы (*.*)|*.*",
+                Filter = "XML файлы (*.xml)|*.xml| Все файлы (*.*)|*.*",
                 FileName = currentSavePath
             };
             if (saveFileDialog.ShowDialog() == true)
@@ -765,17 +775,7 @@ namespace XmlGeneratorNew.ViewModels
                         switch (item)
                         {
                             case SectionItem section:
-                                writer.WriteStartElement("section");
-                                if (!string.IsNullOrEmpty(section.Code))
-                                    writer.WriteAttributeString("code", section.Code);
-                                writer.WriteAttributeString("name", section.Name ?? "");
-                                if (!string.IsNullOrEmpty(section.Title))
-                                    writer.WriteAttributeString("title", section.Title);
-                                foreach (var group in section.Groups)
-                                    WriteGroup(writer, group);
-                                foreach (var prop in section.Properties)
-                                    WriteProperty(writer, prop);
-                                writer.WriteEndElement();
+                                WriteSection(writer, section);
                                 break;
                             case GroupItem group:
                                 WriteGroup(writer, group);
@@ -787,7 +787,7 @@ namespace XmlGeneratorNew.ViewModels
                     }
                     writer.WriteEndElement();
                     writer.WriteEndDocument();
-                    MessageBox.Show($"XML успешно сохранён в :\n{currentSavePath}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"XML успешно сохранён в:\n{currentSavePath}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (System.Exception ex)
                 {
@@ -803,7 +803,7 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("e", "caption", null, group.Caption);
             if (!string.IsNullOrEmpty(group.OdCaption))
                 writer.WriteAttributeString("od", "caption", null, group.OdCaption);
-            if (!string.IsNullOrEmpty(group.Layout))
+            if (!string.IsNullOrEmpty(group.Layout) && group.Layout != "")
                 writer.WriteAttributeString("e", "layout", null, group.Layout);
             if (!string.IsNullOrEmpty(group.Separator))
                 writer.WriteAttributeString("e", "separator", null, group.Separator);
@@ -813,10 +813,12 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("od", "separator", null, group.OdSeparator);
             if (!string.IsNullOrEmpty(group.OdSuffix))
                 writer.WriteAttributeString("od", "suffix", null, group.OdSuffix);
-
             if (group.OdGroupModeIsParagraph)
                 writer.WriteAttributeString("od", "groupMode", null, "paragraph");
-
+            if (group.ECaptionStyleIsGroupHeader)
+                writer.WriteAttributeString("e", "captionStyle", null, "GroupHeader");
+            if (group.OdGroupStyleIsNewParagraphBoldHeader)
+                writer.WriteAttributeString("od", "groupStyle", null, "NewParagraphBoldHeader");
             foreach (var prop in group.Properties)
                 WriteProperty(writer, prop);
             foreach (var subgroup in group.Groups)
@@ -853,6 +855,24 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("xaml", "MinLines", null, prop.MinLines);
             if (!string.IsNullOrEmpty(prop.AutoSuggestName))
                 writer.WriteAttributeString("e", "autoSuggestName", null, prop.AutoSuggestName);
+            if (!string.IsNullOrEmpty(prop.Semd))
+                writer.WriteAttributeString("semd", null, prop.Semd);
+            writer.WriteEndElement();
+        }
+        private void WriteSection(XmlWriter writer, SectionItem section)
+        {
+            writer.WriteStartElement("section");
+            if (!string.IsNullOrEmpty(section.Code))
+                writer.WriteAttributeString("code", section.Code);
+            writer.WriteAttributeString("name", section.Name ?? "");
+            if (!string.IsNullOrEmpty(section.Title))
+                writer.WriteAttributeString("title", section.Title);
+            if (!string.IsNullOrEmpty(section.Semd))
+                writer.WriteAttributeString("semd", section.Semd);
+            foreach (var group in section.Groups)
+                WriteGroup(writer, group);
+            foreach (var prop in section.Properties)
+                WriteProperty(writer, prop);
             writer.WriteEndElement();
         }
 

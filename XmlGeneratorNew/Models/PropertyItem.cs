@@ -49,5 +49,8 @@ namespace XmlGeneratorNew.Models
 
         [ObservableProperty]
         private PropertyType type = PropertyType.String;
+
+        [ObservableProperty]
+        private string semd = "";
     }
 }

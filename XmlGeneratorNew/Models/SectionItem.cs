@@ -5,11 +5,23 @@ namespace XmlGeneratorNew.Models
 {
     public partial class SectionItem : ObservableObject
     {
-        [ObservableProperty] private string code = "";
-        [ObservableProperty] private string name = "";
-        [ObservableProperty] private string title = "";
-        [ObservableProperty] private bool isExpanded;
-        [ObservableProperty] private bool isSelected;
+        [ObservableProperty]
+        private string code = "";
+
+        [ObservableProperty]
+        private string name = "";
+
+        [ObservableProperty]
+        private string title = "";
+
+        [ObservableProperty]
+        private bool isExpanded;
+
+        [ObservableProperty]
+        private bool isSelected;
+
+        [ObservableProperty]
+        private string semd = "";
 
         public ObservableCollection<GroupItem> Groups { get; } = new();
         public ObservableCollection<PropertyItem> Properties { get; } = new();
