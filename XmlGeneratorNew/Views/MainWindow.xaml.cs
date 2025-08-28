@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Input;
 using XmlGeneratorNew.ViewModels;
 
 namespace XmlGeneratorNew.Views
@@ -16,6 +17,17 @@ namespace XmlGeneratorNew.Views
             if (DataContext is MainViewModel vm)
             {
                 vm.SelectedItem = e.NewValue;
+            }
+        }
+        private void TreeView_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Delete && DataContext is MainViewModel vm)
+            {
+                if (vm.DeleteCommand.CanExecute(null))
+                {
+                    vm.DeleteCommand.Execute(null);
+                }
+                e.Handled = true; // Подавляем дальнейшее распространение события
             }
         }
 

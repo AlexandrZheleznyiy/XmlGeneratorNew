@@ -125,7 +125,7 @@
         <TextBlock Grid.Row="0" Text="Генератор XML" FontSize="26" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,5" HorizontalAlignment="Center"/>
         <!-- Пространства имен -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,5">
-            <TextBlock Text="Пространства имен :" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="Пространства имен:" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold" FontSize="14"/>
             <Button Width="100" Height="20" Command="{Binding OpenNamespaceSettingsCommand}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <TextBlock Text="Настроить"/>
@@ -144,6 +144,7 @@
             <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="10" BorderBrush="#E0E0E0" BorderThickness="1">
                 <TreeView ItemsSource="{Binding RootItems}"
                           SelectedItemChanged="TreeView_SelectedItemChanged"
+                          KeyDown="TreeView_KeyDown"
                           Background="Transparent"
                           BorderThickness="0">
                     <TreeView.ItemContainerStyle>
