@@ -67,10 +67,28 @@ namespace XmlGeneratorNew.ViewModels
         partial void OnSelectedItemChanged(object? oldValue, object? newValue)
         {
             System.Diagnostics.Debug.WriteLine($"[VM] SelectedItem changed from {oldValue?.GetType().Name ?? "null"} to {newValue?.GetType().Name ?? "null"}");
+
+            // Уведомляем команды о изменении
             DeleteCommand.NotifyCanExecuteChanged();
             AddGroupCommand.NotifyCanExecuteChanged();
             AddPropertyCommand.NotifyCanExecuteChanged();
             AddSectionCommand.NotifyCanExecuteChanged();
+
+            // Если старое значение было выделено, сбрасываем его выделение
+            if (oldValue is ObservableObject oldObj)
+            {
+                if (oldObj is SectionItem oldSection) oldSection.IsSelected = false;
+                if (oldObj is GroupItem oldGroup) oldGroup.IsSelected = false;
+                if (oldObj is PropertyItem oldProp) oldProp.IsSelected = false;
+            }
+
+            // Если новое значение не null, устанавливаем его выделение
+            if (newValue is ObservableObject newObj)
+            {
+                if (newObj is SectionItem newSection) newSection.IsSelected = true;
+                if (newObj is GroupItem newGroup) newGroup.IsSelected = true;
+                if (newObj is PropertyItem newProp) newProp.IsSelected = true;
+            }
         }
 
         private void AddSection()

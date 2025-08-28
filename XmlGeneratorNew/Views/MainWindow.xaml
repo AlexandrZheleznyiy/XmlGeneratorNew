@@ -14,11 +14,7 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:TreeViewItemLevelToVisibilityConverter x:Key="LevelToVisibilityConverter"/>
         <converters:TreeViewItemLevelToMarginConverter x:Key="LevelToMarginConverter" Indent="5"/>
-        <!-- Убедитесь, что конвертер используется -->
-        <!-- Обновлённый стиль для TreeViewItem с линиями вложенности и выделением -->
-        <!-- Обновлённый стиль для TreeViewItem с линиями вложенности, выделением при выборе и наведении -->
-        <!-- Обновлённый стиль для TreeViewItem с линиями вложенности, выделением при выборе и наведении -->
-        <!-- Обновлённый стиль для TreeViewItem с линиями вложенности, выделением при выборе и наведении -->
+
         <Style x:Key="TreeViewItemWithLine" TargetType="TreeViewItem">
             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -26,79 +22,36 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TreeViewItem">
                         <StackPanel>
-                            <!-- HeaderHost  с   возможностью   выделения  -->
-                            <Border x:Name="HeaderHost" Background="Transparent">
-                                <VisualStateManager.VisualStateGroups>
-                                    <VisualStateGroup Name="CommonStates">
-                                        <!-- Состояния для наведения и нормального состояния -->
-                                        <VisualState Name="Normal"/>
-                                        <VisualState Name="MouseOver">
-                                            <Storyboard>
-                                                <ColorAnimation Storyboard.TargetName="HeaderHost"
-                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                        To="#F0F8FF" Duration="0:0:0.1"/>
-                                            </Storyboard>
-                                        </VisualState>
-                                    </VisualStateGroup>
-                                    <VisualStateGroup Name="SelectionStates">
-                                        <!--  Состояния   для   выделения  -->
-                                        <VisualState Name="Selected">
-                                            <Storyboard>
-                                                <ColorAnimation Storyboard.TargetName="HeaderHost"
-                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                        To="#D1E8FF" Duration="0:0:0.1"/>
-                                            </Storyboard>
-                                        </VisualState>
-                                        <VisualState Name="SelectedInactive">
-                                            <Storyboard>
-                                                <ColorAnimation Storyboard.TargetName="HeaderHost"
-                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                        To="#E6E6E6" Duration="0:0:0.1"/>
-                                            </Storyboard>
-                                        </VisualState>
-                                        <VisualState Name="Unselected">
-                                            <!-- При снятии выделения возвращаем к состоянию  MouseOver  или  Normal -->
-                                            <Storyboard>
-                                                <ColorAnimation Storyboard.TargetName="HeaderHost"
-                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                        To="Transparent" Duration="0:0:0.1"/>
-                                            </Storyboard>
-                                        </VisualState>
-                                    </VisualStateGroup>
-                                </VisualStateManager.VisualStateGroups>
+                            <Border x:Name="HeaderHost" Background="Transparent" BorderBrush="Transparent" BorderThickness="1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
-                                        <!--   Вертикальная   линия   -->
                                         <ColumnDefinition Width="Auto"/>
-                                        <!--   Горизонтальная   линия   ("  ножка  ") -->
                                         <ColumnDefinition Width="Auto"/>
-                                        <!-- Expander -->
                                         <ColumnDefinition Width="*"/>
-                                        <!--  Контент  -->
                                     </Grid.ColumnDefinitions>
                                     <!-- Вертикальная линия -->
                                     <Border Grid.Column="0"
-                                    Width="1"
-                                    Margin="8,0,0,0"
-                                    VerticalAlignment="Stretch"
-                                    Background="#E0E0E0"
-                                    Visibility="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem}, 
-                                                         Converter={StaticResource LevelToVisibilityConverter}}"/>
-                                    <!--   Горизонтальная   линия   ("  ножка  ") -->
+                                            Width="1"
+                                            Margin="8,0,0,0"
+                                            VerticalAlignment="Stretch"
+                                            Background="#E0E0E0"
+                                            Visibility="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem}, 
+                                                                 Converter={StaticResource LevelToVisibilityConverter}}"/>
+                                    <!-- Горизонтальная линия ("ножка") -->
                                     <Border x:Name="PART_HorizontalLine"
-                                    Grid.Column="1"
-                                    Height="1"
-                                    Width="10"
-                                    Margin="0,0,2,0"
-                                    Background="#9E9E9E"
-                                    VerticalAlignment="Center"/>
+                                            Grid.Column="1"
+                                            Height="1"
+                                            Width="10"
+                                            Margin="0,0,2,0"
+                                            Background="#9E9E9E"
+                                            VerticalAlignment="Center"/>
                                     <!-- Expander -->
                                     <Grid Grid.Column="2" Margin="2,0">
                                         <ToggleButton x:Name="Expander"
-                                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
-                                              ClickMode="Press"
-                                              Click="Expander_Click">
+                                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                                      ClickMode="Press"
+                                                      Click="Expander_Click">
                                             <ToggleButton.Style>
                                                 <Style TargetType="ToggleButton">
                                                     <Setter Property="Template">
@@ -106,9 +59,9 @@
                                                             <ControlTemplate TargetType="ToggleButton">
                                                                 <Grid Width="16" Height="16" Background="Transparent">
                                                                     <Path x:Name="ExpandPath"
-                                                                  Data="M 0 4 L 8 12 L 16 4 Z"
-                                                                  Stroke="#9E9E9E"
-                                                                  StrokeThickness="1.5"/>
+                                                                          Data="M 0 4 L 8 12 L 16 4 Z"
+                                                                          Stroke="#9E9E9E"
+                                                                          StrokeThickness="1.5"/>
                                                                 </Grid>
                                                                 <ControlTemplate.Triggers>
                                                                     <Trigger Property="IsChecked" Value="True">
@@ -129,14 +82,14 @@
                                             </ToggleButton.Style>
                                         </ToggleButton>
                                     </Grid>
-                                    <!--   Контент   -->
+                                    <!-- Контент -->
                                     <ContentPresenter Grid.Column="3"
-                                              x:Name="PART_Header"
-                                              ContentSource="Header"
-                                              VerticalAlignment="Center"/>
+                                                      x:Name="PART_Header"
+                                                      ContentSource="Header"
+                                                      VerticalAlignment="Center"/>
                                 </Grid>
                             </Border>
-                            <!--   Дочерние   элементы   -->
+                            <!-- Дочерние элементы -->
                             <ItemsPresenter x:Name="ItemsHost" Visibility="Collapsed"/>
                         </StackPanel>
                         <ControlTemplate.Triggers>
@@ -147,11 +100,17 @@
                                 <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
                                 <Setter TargetName="PART_HorizontalLine" Property="Visibility" Value="Collapsed"/>
                             </Trigger>
+                            <!-- Триггер для выделения -->
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="HeaderHost" Property="Background" Value="#e8edec"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter TargetName="HeaderHost" Property="Background" Value="Transparent"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <!-- ИСПРАВЛЕНО: Используем правильный ключ ресурса -->
             <Setter Property="Margin" Value="{Binding RelativeSource={RelativeSource Self}, Converter={StaticResource LevelToMarginConverter}}"/>
         </Style>
     </Window.Resources>
@@ -162,11 +121,11 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <!--   Заголовок   -->
+        <!-- Заголовок -->
         <TextBlock Grid.Row="0" Text="Генератор XML" FontSize="26" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,5" HorizontalAlignment="Center"/>
-        <!--   Пространства   имен   -->
+        <!-- Пространства имен -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,5">
-            <TextBlock Text="Пространства имен:" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="Пространства имен :" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold" FontSize="14"/>
             <Button Width="100" Height="20" Command="{Binding OpenNamespaceSettingsCommand}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <TextBlock Text="Настроить"/>
@@ -174,14 +133,14 @@
                 </StackPanel>
             </Button>
         </StackPanel>
-        <!--   Дерево   и   редактор   -->
+        <!-- Дерево и редактор -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="350"/>
                 <ColumnDefinition Width="15"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <!--   Дерево   -->
+            <!-- Дерево -->
             <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="10" BorderBrush="#E0E0E0" BorderThickness="1">
                 <TreeView ItemsSource="{Binding RootItems}"
                           SelectedItemChanged="TreeView_SelectedItemChanged"
@@ -208,7 +167,7 @@
                     </TreeView.Resources>
                 </TreeView>
             </Border>
-            <!--   Редактор   -->
+            <!-- Редактор -->
             <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="15" BorderBrush="#E0E0E0" BorderThickness="1">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="10">
                     <Grid>
@@ -236,7 +195,7 @@
                                 <DataTemplate DataType="{x:Type models:GroupItem}">
                                     <StackPanel>
                                         <TextBlock Text="Редактирование группы" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Имя:"/>
+                                        <TextBlock Text="Имя :"/>
                                         <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <TextBlock Text="e:caption:"/>
                                         <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
@@ -244,8 +203,8 @@
                                         <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <TextBlock Text="e:layout:"/>
                                         <ComboBox SelectedValue="{Binding Layout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-          SelectedValuePath="Content"
-          Margin="0,0,0,10">
+                                                  SelectedValuePath="Content"
+                                                  Margin="0,0,0,10">
                                             <ComboBoxItem Content="DockPanel"/>
                                             <ComboBoxItem Content="StackPanel"/>
                                             <ComboBoxItem Content="GroupBox"/>
@@ -306,18 +265,18 @@
                             </ContentControl.Resources>
                         </ContentControl>
                         <TextBlock Text="Выберите элемент для редактирования"
-  FontStyle="Italic" Foreground="Gray"
+                                   FontStyle="Italic" Foreground="Gray"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Visibility="{Binding SelectedItem, Converter={StaticResource NullToVisibilityConverter}}"/>
                     </Grid>
                 </ScrollViewer>
             </Border>
         </Grid>
-        <!--   Кнопки   управления   -->
+        <!-- Кнопки управления -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
             <Button Content="Добавить секцию" Command="{Binding AddSectionToRootCommand}" Width="120" Margin="0,0,5,0"/>
-            <Button Content="Добавить группу " Command="{Binding AddGroupToRootCommand}" Width="120" Margin="0,0,5,0"/>
-            <Button Content="Добавить свойство " Command="{Binding AddPropertyToRootCommand}" Width="120" Margin="0,0,5,0"/>
+            <Button Content="Добавить группу" Command="{Binding AddGroupToRootCommand}" Width="120" Margin="0,0,5,0"/>
+            <Button Content="Добавить свойство" Command="{Binding AddPropertyToRootCommand}" Width="120" Margin="0,0,5,0"/>
             <Button Content="Удалить" Command="{Binding DeleteCommand}" Width="100" Margin="0,0,5,0"/>
             <Button Content="Сбросить всё" Command="{Binding ResetCommand}" Width="120" Margin="0,0,5,0"/>
             <Button Content="Загрузить XML" Command="{Binding LoadCommand}" Width="120" Margin="0,0,5,0"/>
