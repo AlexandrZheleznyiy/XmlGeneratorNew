@@ -819,6 +819,11 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("e", "captionStyle", null, "GroupHeader");
             if (group.OdGroupStyleIsNewParagraphBoldHeader)
                 writer.WriteAttributeString("od", "groupStyle", null, "NewParagraphBoldHeader");
+
+            // Добавлено: запись атрибута semd
+            if (!string.IsNullOrEmpty(group.Semd))
+                writer.WriteAttributeString("semd", null, group.Semd);
+
             foreach (var prop in group.Properties)
                 WriteProperty(writer, prop);
             foreach (var subgroup in group.Groups)

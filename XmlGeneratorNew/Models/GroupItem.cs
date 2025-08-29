@@ -53,6 +53,10 @@ namespace XmlGeneratorNew.Models
         [ObservableProperty]
         private bool isSelected;
 
+        [ObservableProperty]
+        private string semd = "";
+
+
         public ObservableCollection<GroupItem> Groups { get; } = new();
         public ObservableCollection<PropertyItem> Properties { get; } = new();
         public ObservableCollection<object> Children { get; } = new();
