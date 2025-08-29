@@ -10,10 +10,13 @@
         Background="#fafafa"
         FontFamily="Segoe UI, Segoe UI Symbol, Segoe WP"
         SnapsToDevicePixels="True">
+
     <Window.Resources>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:TreeViewItemLevelToVisibilityConverter x:Key="LevelToVisibilityConverter"/>
         <converters:TreeViewItemLevelToMarginConverter x:Key="LevelToMarginConverter" Indent="5"/>
+
+        <!-- Стиль TreeViewItem с линиями -->
         <Style x:Key="TreeViewItemWithLine" TargetType="TreeViewItem">
             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -29,7 +32,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <!--  Вертикальная   линия  -->
+                                    <!-- Вертикальная линия -->
                                     <Border Grid.Column="0"
                                             Width="1"
                                             Margin="8,0,0,0"
@@ -37,7 +40,7 @@
                                             Background="#E0E0E0"
                                             Visibility="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem}, 
                                                                  Converter={StaticResource LevelToVisibilityConverter}}"/>
-                                    <!--  Горизонтальная   линия  (" ножка ") -->
+                                    <!-- Горизонтальная линия ("ножка") -->
                                     <Border x:Name="PART_HorizontalLine"
                                             Grid.Column="1"
                                             Height="1"
@@ -81,14 +84,14 @@
                                             </ToggleButton.Style>
                                         </ToggleButton>
                                     </Grid>
-                                    <!--  Контент  -->
+                                    <!-- Контент -->
                                     <ContentPresenter Grid.Column="3"
                                                       x:Name="PART_Header"
                                                       ContentSource="Header"
                                                       VerticalAlignment="Center"/>
                                 </Grid>
                             </Border>
-                            <!--  Дочерние элементы  -->
+                            <!-- Дочерние элементы -->
                             <ItemsPresenter x:Name="ItemsHost" Visibility="Collapsed"/>
                         </StackPanel>
                         <ControlTemplate.Triggers>
@@ -99,7 +102,6 @@
                                 <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
                                 <Setter TargetName="PART_HorizontalLine" Property="Visibility" Value="Collapsed"/>
                             </Trigger>
-                            <!--  Триггер для выделения  -->
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="HeaderHost" Property="Background" Value="#e8edec"/>
                             </Trigger>
@@ -113,6 +115,7 @@
             <Setter Property="Margin" Value="{Binding RelativeSource={RelativeSource Self}, Converter={StaticResource LevelToMarginConverter}}"/>
         </Style>
     </Window.Resources>
+
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -120,34 +123,58 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <!--  Заголовок  -->
-        <TextBlock Grid.Row="0" Text=" Генератор  XML" FontSize="26" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,5" HorizontalAlignment="Center"/>
-        <!--  Пространства имен  -->
+
+        <!-- Заголовок -->
+        <TextBlock Grid.Row="0" Text="Генератор XML" FontSize="26" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,5" HorizontalAlignment="Center"/>
+
+        <!-- Пространства имён -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,5">
             <Button Width="130" Height="20" Command="{Binding OpenNamespaceSettingsCommand}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="Пространство имен"/>
+                    <TextBlock Text="Пространство имён"/>
                     <TextBlock Text="!" Foreground="Red" FontWeight="Bold" Margin="3,0,0,0"/>
                 </StackPanel>
             </Button>
         </StackPanel>
-        <!--  Дерево и редактор  -->
+
+        <!-- Дерево и редактор -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="350"/>
                 <ColumnDefinition Width="15"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <!--  Дерево  -->
+
+            <!-- Дерево -->
             <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="10" BorderBrush="#E0E0E0" BorderThickness="1">
                 <TreeView ItemsSource="{Binding RootItems}"
                           SelectedItemChanged="TreeView_SelectedItemChanged"
                           KeyDown="TreeView_KeyDown"
                           Background="Transparent"
                           BorderThickness="0">
+
+                    <!-- InputBindings: Ctrl+D -->
+                    <TreeView.InputBindings>
+                        <KeyBinding Key="D" Modifiers="Control" 
+                                    Command="{Binding DataContext.DuplicateCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    </TreeView.InputBindings>
+
+                    <!-- Контекстное меню -->
                     <TreeView.ItemContainerStyle>
-                        <Style BasedOn="{StaticResource TreeViewItemWithLine}" TargetType="TreeViewItem"/>
+                        <Style BasedOn="{StaticResource TreeViewItemWithLine}" TargetType="TreeViewItem">
+                            <Setter Property="ContextMenu">
+                                <Setter.Value>
+                                    <ContextMenu>
+                                        <MenuItem Header="Дубль"
+          Command="{Binding DataContext.DuplicateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+          CommandParameter="{Binding}" />
+                                    </ContextMenu>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
                     </TreeView.ItemContainerStyle>
+
+                    <!-- Шаблоны данных -->
                     <TreeView.Resources>
                         <HierarchicalDataTemplate DataType="{x:Type models:SectionItem}" ItemsSource="{Binding Children}">
                             <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#2196F3" FontSize="15"/>
@@ -166,12 +193,14 @@
                     </TreeView.Resources>
                 </TreeView>
             </Border>
-            <!--  Редактор  -->
+
+            <!-- Редактор -->
             <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="15" BorderBrush="#E0E0E0" BorderThickness="1">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="10">
                     <Grid>
                         <ContentControl Content="{Binding SelectedItem}">
                             <ContentControl.Resources>
+                                <!-- Здесь шаблоны редактирования (оставь как есть) -->
                                 <DataTemplate DataType="{x:Type models:SectionItem}">
                                     <StackPanel>
                                         <TextBlock Text="Редактирование секции" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
@@ -183,16 +212,16 @@
                                         <TextBox Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <TextBlock Text="semd:"/>
                                         <StackPanel Orientation="Horizontal">
-                                            <ComboBox x:Name="SemedComboBoxSection" SelectedValue="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              SelectedValuePath="Content"
-                                              Width="150"
-                                              Margin="0,0,5,0">
+                                            <ComboBox SelectedValue="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                      SelectedValuePath="Content"
+                                                      Width="150"
+                                                      Margin="0,0,5,0">
                                                 <ComboBoxItem Content=""/>
                                                 <ComboBoxItem Content="DiseaseAnamnesis"/>
                                                 <ComboBoxItem Content="LifeAnamnesis"/>
                                                 <ComboBoxItem Content="ObjectiveState"/>
                                             </ComboBox>
-                                            <TextBlock Text="( если пусто, будет использовано значение из поля ниже )" FontSize="10" Foreground="Gray" VerticalAlignment="Center"/>
+                                            <TextBlock Text="(если пусто, будет использовано значение из поля ниже)" FontSize="10" Foreground="Gray" VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <TextBox Text="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,10"/>
                                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
@@ -213,9 +242,9 @@
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="od:groupMode:"/>
                                             <CheckBox IsChecked="{Binding OdGroupModeIsParagraph, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="paragraph" Margin="3,0,23,5"/>
-                                            <TextBlock Text=" e:captionStyle:"/>
+                                            <TextBlock Text="e:captionStyle:"/>
                                             <CheckBox IsChecked="{Binding ECaptionStyleIsGroupHeader, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="GroupHeader" Margin="3,0,23,5"/>
-                                            <TextBlock Text=" od:groupStyle:"/>
+                                            <TextBlock Text="od:groupStyle:"/>
                                             <CheckBox IsChecked="{Binding OdGroupStyleIsNewParagraphBoldHeader, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="NewParagraphBoldHeader" Margin="3,0,23,5"/>
                                         </StackPanel>
                                         <TextBlock Text="e:caption:"/>
@@ -241,10 +270,10 @@
                                         <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <TextBlock Text="semd:"/>
                                         <StackPanel Orientation="Horizontal">
-                                            <ComboBox x:Name="SemedComboBoxGroup" SelectedValue="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             SelectedValuePath="Content"
-                                             Width="150"
-                                             Margin="0,0,5,0"> 
+                                            <ComboBox SelectedValue="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                      SelectedValuePath="Content"
+                                                      Width="150"
+                                                      Margin="0,0,5,0">
                                                 <ComboBoxItem Content=""/>
                                                 <ComboBoxItem Content="DiseaseAnamnesis"/>
                                                 <ComboBoxItem Content="LifeAnamnesis"/>
@@ -296,10 +325,10 @@
                                         <TextBox Text="{Binding AutoSuggestName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <TextBlock Text="semd:"/>
                                         <StackPanel Orientation="Horizontal">
-                                            <ComboBox x:Name="SemedComboBoxProperty" SelectedValue="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              SelectedValuePath="Content"
-                                              Width="150"
-                                              Margin="0,0,5,0">
+                                            <ComboBox SelectedValue="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                      SelectedValuePath="Content"
+                                                      Width="150"
+                                                      Margin="0,0,5,0">
                                                 <ComboBoxItem Content=""/>
                                                 <ComboBoxItem Content="DiseaseAnamnesis"/>
                                                 <ComboBoxItem Content="LifeAnamnesis"/>
@@ -320,7 +349,8 @@
                 </ScrollViewer>
             </Border>
         </Grid>
-        <!--  Кнопки   управления  -->
+
+        <!-- Кнопки -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
             <Button Content="Добавить секцию" Command="{Binding AddSectionToRootCommand}" Width="120" Margin="0,0,5,0"/>
             <Button Content="Добавить группу" Command="{Binding AddGroupToRootCommand}" Width="120" Margin="0,0,5,0"/>

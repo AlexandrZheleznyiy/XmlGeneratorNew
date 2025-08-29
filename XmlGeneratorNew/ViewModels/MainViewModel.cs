@@ -46,6 +46,7 @@ namespace XmlGeneratorNew.ViewModels
         public IRelayCommand AddSectionToRootCommand { get; }
         public IRelayCommand AddGroupToRootCommand { get; }
         public IRelayCommand AddPropertyToRootCommand { get; }
+        public IRelayCommand<object> DuplicateCommand { get; }
 
         public MainViewModel()
         {
@@ -61,7 +62,10 @@ namespace XmlGeneratorNew.ViewModels
             ResetCommand = new RelayCommand(ResetAll);
             LoadCommand = new RelayCommand(LoadXml);
             SaveCommand = new RelayCommand(SaveXml);
-            OpenNamespaceSettingsCommand = new RelayCommand(OpenNamespaceSettings);
+            OpenNamespaceSettingsCommand = new RelayCommand(OpenNamespaceSettings); DuplicateCommand = new RelayCommand<object>(
+    execute: obj => DuplicateItem(),
+    canExecute: obj => SelectedItem != null
+);
         }
 
         partial void OnSelectedItemChanged(object? oldValue, object? newValue)
@@ -890,5 +894,188 @@ namespace XmlGeneratorNew.ViewModels
                 TemplateName = settingsWindow.TemplateName ?? "";
             }
         }
+        private void DuplicateItem()
+        {
+            if (SelectedItem == null) return;
+
+            object? duplicatedItem = null;
+
+            switch (SelectedItem)
+            {
+                case SectionItem section:
+                    duplicatedItem = DuplicateSection(section);
+                    break;
+                case GroupItem group:
+                    duplicatedItem = DuplicateGroup(group);
+                    break;
+                case PropertyItem prop:
+                    duplicatedItem = DuplicateProperty(prop);
+                    break;
+            }
+
+            if (duplicatedItem != null)
+            {
+                var parent = FindParent(SelectedItem);
+                InsertAfter(parent, SelectedItem, duplicatedItem);
+                SelectedItem = duplicatedItem;
+            }
+        }
+
+        private SectionItem DuplicateSection(SectionItem section)
+        {
+            var newSection = new SectionItem
+            {
+                Code = section.Code,
+                Name = $"{section.Name} (копия)",
+                Title = section.Title,
+                Semd = section.Semd,
+                IsExpanded = section.IsExpanded
+            };
+
+            foreach (var group in section.Groups)
+                newSection.AddGroup(DuplicateGroup(group));
+
+            foreach (var prop in section.Properties)
+                newSection.AddProperty(DuplicateProperty(prop));
+
+            return newSection;
+        }
+
+        private GroupItem DuplicateGroup(GroupItem group)
+        {
+            var newGroup = new GroupItem
+            {
+                Name = $"{group.Name} (копия)",
+                Caption = group.Caption,
+                OdCaption = group.OdCaption,
+                Layout = group.Layout,
+                Separator = group.Separator,
+                Suffix = group.Suffix,
+                OdSeparator = group.OdSeparator,
+                OdSuffix = group.OdSuffix,
+                OdGroupMode = group.OdGroupMode,
+                OdGroupModeIsParagraph = group.OdGroupModeIsParagraph,
+                ECaptionStyle = group.ECaptionStyle,
+                ECaptionStyleIsGroupHeader = group.ECaptionStyleIsGroupHeader,
+                OdGroupStyle = group.OdGroupStyle,
+                OdGroupStyleIsNewParagraphBoldHeader = group.OdGroupStyleIsNewParagraphBoldHeader,
+                Semd = group.Semd,
+                IsExpanded = group.IsExpanded
+            };
+
+            foreach (var subgroup in group.Groups)
+                newGroup.AddGroup(DuplicateGroup(subgroup));
+
+            foreach (var prop in group.Properties)
+                newGroup.AddProperty(DuplicateProperty(prop));
+
+            return newGroup;
+        }
+
+        private PropertyItem DuplicateProperty(PropertyItem prop)
+        {
+            return new PropertyItem
+            {
+                Name = $"{prop.Name} (копия)",
+                Caption = prop.Caption,
+                OdCaption = prop.OdCaption,
+                Separator = prop.Separator,
+                Suffix = prop.Suffix,
+                OdSeparator = prop.OdSeparator,
+                OdSuffix = prop.OdSuffix,
+                MinWidth = prop.MinWidth,
+                MinLines = prop.MinLines,
+                AutoSuggestName = prop.AutoSuggestName,
+                Value = prop.Value,
+                Type = prop.Type,
+                Semd = prop.Semd
+            };
+        }
+
+        private object? FindParent(object item)
+        {
+            if (RootItems.Contains(item))
+                return null;
+
+            foreach (var section in RootItems.OfType<SectionItem>())
+            {
+                if (section.Groups.Contains(item) || section.Properties.Contains(item))
+                    return section;
+
+                var parent = FindParentInGroup(item, section.Groups);
+                if (parent != null) return parent;
+            }
+
+            foreach (var group in RootItems.OfType<GroupItem>())
+            {
+                if (group.Groups.Contains(item) || group.Properties.Contains(item))
+                    return group;
+
+                var parent = FindParentInGroup(item, group.Groups);
+                if (parent != null) return parent;
+            }
+
+            return null;
+        }
+
+        private GroupItem? FindParentInGroup(object item, ObservableCollection<GroupItem> groups)
+        {
+            foreach (var group in groups)
+            {
+                if (group.Groups.Contains(item) || group.Properties.Contains(item))
+                    return group;
+
+                var found = FindParentInGroup(item, group.Groups);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        private void InsertAfter(object? parent, object reference, object newItem)
+        {
+            if (parent == null)
+            {
+                int index = RootItems.IndexOf(reference);
+                if (index >= 0)
+                    RootItems.Insert(index + 1, newItem);
+            }
+            else if (parent is SectionItem section)
+            {
+                int groupIndex = section.Groups.IndexOf(reference as GroupItem);
+                if (groupIndex >= 0)
+                {
+                    section.Groups.Insert(groupIndex + 1, (GroupItem)newItem);
+                    section.Children.Insert(section.Children.IndexOf(reference) + 1, newItem);
+                    return;
+                }
+
+                int propIndex = section.Properties.IndexOf(reference as PropertyItem);
+                if (propIndex >= 0)
+                {
+                    section.Properties.Insert(propIndex + 1, (PropertyItem)newItem);
+                    section.Children.Insert(section.Children.IndexOf(reference) + 1, newItem);
+                    return;
+                }
+            }
+            else if (parent is GroupItem group)
+            {
+                int subGroupIndex = group.Groups.IndexOf(reference as GroupItem);
+                if (subGroupIndex >= 0)
+                {
+                    group.Groups.Insert(subGroupIndex + 1, (GroupItem)newItem);
+                    group.Children.Insert(group.Children.IndexOf(reference) + 1, newItem);
+                    return;
+                }
+
+                int propIndex = group.Properties.IndexOf(reference as PropertyItem);
+                if (propIndex >= 0)
+                {
+                    group.Properties.Insert(propIndex + 1, (PropertyItem)newItem);
+                    group.Children.Insert(group.Children.IndexOf(reference) + 1, newItem);
+                    return;
+                }
+            }
+        }
+
     }
 }
