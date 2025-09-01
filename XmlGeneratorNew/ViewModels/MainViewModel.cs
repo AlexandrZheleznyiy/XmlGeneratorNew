@@ -926,7 +926,7 @@ namespace XmlGeneratorNew.ViewModels
             var newSection = new SectionItem
             {
                 Code = section.Code,
-                Name = $"{section.Name} (копия)",
+                Name = $"{section.Name}",
                 Title = section.Title,
                 Semd = section.Semd,
                 IsExpanded = section.IsExpanded
@@ -945,7 +945,7 @@ namespace XmlGeneratorNew.ViewModels
         {
             var newGroup = new GroupItem
             {
-                Name = $"{group.Name} (копия)",
+                Name = $"{group.Name}",
                 Caption = group.Caption,
                 OdCaption = group.OdCaption,
                 Layout = group.Layout,
@@ -976,7 +976,7 @@ namespace XmlGeneratorNew.ViewModels
         {
             return new PropertyItem
             {
-                Name = $"{prop.Name} (копия)",
+                Name = $"{prop.Name}",
                 Caption = prop.Caption,
                 OdCaption = prop.OdCaption,
                 Separator = prop.Separator,
@@ -1030,6 +1030,91 @@ namespace XmlGeneratorNew.ViewModels
             }
             return null;
         }
+        public void HandleDrop(object draggedItem, object? targetItem)
+        {
+            if (draggedItem == null || draggedItem == targetItem)
+                return;
+
+            // Запретить вложение секции в секцию
+            if (draggedItem is SectionItem && targetItem is SectionItem)
+            {
+                // Игнорируем или можно просто не менять вложенность
+                return;
+            }
+
+            // Удаляем draggedItem из текущего места
+            RemoveItem(draggedItem);
+
+            if (targetItem == null)
+            {
+                // Перемещение в корень
+                RootItems.Add(draggedItem);
+                SelectedItem = draggedItem;
+                return;
+            }
+
+            // Остальная логика вложения
+
+            switch (targetItem)
+            {
+                case SectionItem section:
+                    if (draggedItem is GroupItem g) section.AddGroup(g);
+                    else if (draggedItem is PropertyItem p) section.AddProperty(p);
+                    else if (draggedItem is SectionItem)
+                    {
+                        // Не должно сюда попадать из-за проверки выше
+                    }
+                    break;
+
+                case GroupItem group:
+                    if (draggedItem is GroupItem gr) group.AddGroup(gr);
+                    else if (draggedItem is PropertyItem p) group.AddProperty(p);
+                    break;
+
+                case PropertyItem _:
+                    var parent = FindParent(targetItem);
+                    InsertAfter(parent, targetItem, draggedItem);
+                    break;
+
+                default:
+                    RootItems.Add(draggedItem);
+                    break;
+            }
+
+            SelectedItem = draggedItem;
+        }
+
+
+
+        private void RemoveItem(object item)
+        {
+            if (RootItems.Contains(item))
+            {
+                RootItems.Remove(item);
+                return;
+            }
+
+            if (item is PropertyItem prop)
+            {
+                var parent = FindParent(item);
+                if (parent is SectionItem section)
+                    section.RemoveProperty(prop);
+                else if (parent is GroupItem group)
+                    group.RemoveChild(prop);
+            }
+            else if (item is GroupItem group)
+            {
+                var parent = FindParent(item);
+                if (parent is SectionItem section)
+                    section.RemoveGroup(group);
+                else if (parent is GroupItem groupParent)
+                    groupParent.RemoveChild(group);
+            }
+            else if (item is SectionItem section)
+            {
+                RootItems.Remove(section);
+            }
+        }
 
         private void InsertAfter(object? parent, object reference, object newItem)
         {
@@ -1075,6 +1160,19 @@ namespace XmlGeneratorNew.ViewModels
                     return;
                 }
             }
+        }
+        public void MoveItemToRoot(object draggedItem)
+        {
+            if (draggedItem == null)
+                return;
+
+            // Удаляем из текущего места
+            RemoveItem(draggedItem);
+
+            // Добавляем в корень последний элемент
+            RootItems.Add(draggedItem);
+
+            SelectedItem = draggedItem;
         }
 
     }

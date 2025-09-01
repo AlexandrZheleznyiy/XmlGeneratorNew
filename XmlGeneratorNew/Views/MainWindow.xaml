@@ -147,11 +147,15 @@
 
             <!-- Дерево -->
             <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="10" BorderBrush="#E0E0E0" BorderThickness="1">
-                <TreeView ItemsSource="{Binding RootItems}"
-                          SelectedItemChanged="TreeView_SelectedItemChanged"
-                          KeyDown="TreeView_KeyDown"
-                          Background="Transparent"
-                          BorderThickness="0">
+                <TreeView x:Name="MainTreeView" ItemsSource="{Binding RootItems}"
+          SelectedItemChanged="TreeView_SelectedItemChanged"
+          PreviewMouseLeftButtonDown="TreeView_PreviewMouseLeftButtonDown"
+          MouseMove="TreeView_MouseMove"
+          Drop="TreeView_Drop"
+          DragOver="TreeView_DragOver"
+          AllowDrop="True"
+          KeyDown="TreeView_KeyDown"
+          Background="Transparent" BorderThickness="0">
 
                     <!-- InputBindings: Ctrl+D -->
                     <TreeView.InputBindings>
