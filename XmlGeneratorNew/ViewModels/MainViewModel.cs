@@ -14,22 +14,13 @@ namespace XmlGeneratorNew.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
-        public ObservableCollection<object> RootItems { get; } = new();
-        public ObservableCollection<NamespaceItem> Namespaces { get; } = new()
-        {
-            new NamespaceItem { Prefix = "e", Uri = "http://www.sanatorium-is.ru/editor", IsSelected = true },
-            new NamespaceItem { Prefix = "xaml", Uri = "http://schemas.microsoft.com/winfx/2006/xaml/presentation", IsSelected = true },
-            new NamespaceItem { Prefix = "x", Uri = "http://schemas.microsoft.com/winfx/2006/xaml", IsSelected = true },
-            new NamespaceItem { Prefix = "od", Uri = "http://www.sanatorium-is.ru/officeDocument", IsSelected = true },
-            new NamespaceItem { Prefix = "precompile", Uri = "http://www.sanatorium-is.ru/premetadata", IsSelected = true },
-            new NamespaceItem { Prefix = "p", Uri = "clr-namespace:Markup.Programming;assembly=Markup.Programming", IsSelected = false }
-        };
-
         [ObservableProperty]
         private string templateName = "";
 
         [ObservableProperty]
         private object? selectedItem;
+        public ObservableCollection<object> RootItems { get; } = new();
+        private TypeSettingsViewModel _typeSettings = new();
 
         private int groupIndex = 1;
         private int propertyIndex = 1;
@@ -47,6 +38,18 @@ namespace XmlGeneratorNew.ViewModels
         public IRelayCommand AddGroupToRootCommand { get; }
         public IRelayCommand AddPropertyToRootCommand { get; }
         public IRelayCommand<object> DuplicateCommand { get; }
+        public IRelayCommand OpenTypeSettingsCommand { get; }
+        public ObservableCollection<NamespaceItem> Namespaces { get; } = new()
+        {
+            new NamespaceItem { Prefix = "e", Uri = "http://www.sanatorium-is.ru/editor", IsSelected = true },
+            new NamespaceItem { Prefix = "xaml", Uri = "http://schemas.microsoft.com/winfx/2006/xaml/presentation", IsSelected = true },
+            new NamespaceItem { Prefix = "x", Uri = "http://schemas.microsoft.com/winfx/2006/xaml", IsSelected = true },
+            new NamespaceItem { Prefix = "od", Uri = "http://www.sanatorium-is.ru/officeDocument", IsSelected = true },
+            new NamespaceItem { Prefix = "precompile", Uri = "http://www.sanatorium-is.ru/premetadata", IsSelected = true },
+            new NamespaceItem { Prefix = "p", Uri = "clr-namespace:Markup.Programming;assembly=Markup.Programming", IsSelected = false }
+        };
+
+        
 
         public MainViewModel()
         {
@@ -66,6 +69,16 @@ namespace XmlGeneratorNew.ViewModels
     execute: obj => DuplicateItem(),
     canExecute: obj => SelectedItem != null
 );
+            OpenTypeSettingsCommand = new RelayCommand(OpenTypeSettings);
+        }
+        private void OpenTypeSettings()
+        {
+            var settingsWindow = new Views.TypeSettingsWindow(_typeSettings);
+            settingsWindow.Owner = Application.Current.MainWindow;
+            if (settingsWindow.ShowDialog() == true)
+            {
+                _typeSettings = settingsWindow.ViewModel; // Сохраняем настройки
+            }
         }
 
         partial void OnSelectedItemChanged(object? oldValue, object? newValue)
@@ -789,6 +802,37 @@ namespace XmlGeneratorNew.ViewModels
                                 break;
                         }
                     }
+                    // --- Вставка тегов в зависимости от типа ---
+                    if (_typeSettings.IsConsultation)
+                    {
+                        writer.WriteStartElement("e", "consultantDefaultConclusion", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteAttributeString("autoSuggestName", "specC");
+                        writer.WriteEndElement();
+                    }
+
+                    if (_typeSettings.IsInstrumental)
+                    {
+                        writer.WriteStartElement("e", "instrumentalProbeConclusion", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteAttributeString("noPathologyCounter", "True");
+                        writer.WriteAttributeString("autoSuggestName", "ИИ.заключение");
+
+                        writer.WriteStartElement("e", "recommendations", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteAttributeString("autoSuggestName", "ИИ.рекомендации");
+                        writer.WriteEndElement();
+
+                        writer.WriteEndElement(); // instrumentalProbeConclusion
+                    }
+
+                    if (_typeSettings.IsLaboratory)
+                    {
+                        writer.WriteStartElement("e", "probeGenericResultSelection", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteEndElement();
+
+                        writer.WriteStartElement("e", "labProbeConclusion", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteAttributeString("autoSuggestName", "labProbeC");
+                        writer.WriteEndElement();
+                    }
+                    // --- Конец вставки ---
                     writer.WriteEndElement();
                     writer.WriteEndDocument();
                     MessageBox.Show($"XML успешно сохранён в:\n{currentSavePath}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);

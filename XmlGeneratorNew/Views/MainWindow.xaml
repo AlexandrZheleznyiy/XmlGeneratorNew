@@ -135,6 +135,9 @@
                     <TextBlock Text="!" Foreground="Red" FontWeight="Bold" Margin="3,0,0,0"/>
                 </StackPanel>
             </Button>
+            <Button Width="100" Height="20" Margin="10,0,0,0" Command="{Binding OpenTypeSettingsCommand}">
+                <TextBlock Text="Тип" HorizontalAlignment="Center"/>
+            </Button>
         </StackPanel>
 
         <!-- Дерево и редактор -->
