@@ -21,6 +21,7 @@ namespace XmlGeneratorNew.ViewModels
         private object? selectedItem;
         public ObservableCollection<object> RootItems { get; } = new();
         private TypeSettingsViewModel _typeSettings = new();
+        private BlocksSettingsViewModel _blocksSettings = new();
 
         private int groupIndex = 1;
         private int propertyIndex = 1;
@@ -39,18 +40,7 @@ namespace XmlGeneratorNew.ViewModels
         public IRelayCommand AddPropertyToRootCommand { get; }
         public IRelayCommand<object> DuplicateCommand { get; }
         public IRelayCommand OpenTypeSettingsCommand { get; }
-        public ObservableCollection<NamespaceItem> Namespaces { get; } = new()
-        {
-            new NamespaceItem { Prefix = "e", Uri = "http://www.sanatorium-is.ru/editor", IsSelected = true },
-            new NamespaceItem { Prefix = "xaml", Uri = "http://schemas.microsoft.com/winfx/2006/xaml/presentation", IsSelected = true },
-            new NamespaceItem { Prefix = "x", Uri = "http://schemas.microsoft.com/winfx/2006/xaml", IsSelected = true },
-            new NamespaceItem { Prefix = "od", Uri = "http://www.sanatorium-is.ru/officeDocument", IsSelected = true },
-            new NamespaceItem { Prefix = "precompile", Uri = "http://www.sanatorium-is.ru/premetadata", IsSelected = true },
-            new NamespaceItem { Prefix = "p", Uri = "clr-namespace:Markup.Programming;assembly=Markup.Programming", IsSelected = false }
-        };
-
-        
-
+        public IRelayCommand OpenBlocksSettingsCommand { get; }
         public MainViewModel()
         {
             AddSectionToRootCommand = new RelayCommand(AddSectionToRoot);
@@ -70,7 +60,53 @@ namespace XmlGeneratorNew.ViewModels
     canExecute: obj => SelectedItem != null
 );
             OpenTypeSettingsCommand = new RelayCommand(OpenTypeSettings);
+            OpenBlocksSettingsCommand = new RelayCommand(OpenBlocksSettings);
         }
+        public ObservableCollection<NamespaceItem> Namespaces { get; } = new()
+        {
+            new NamespaceItem { Prefix = "e", Uri = "http://www.sanatorium-is.ru/editor", IsSelected = true },
+            new NamespaceItem { Prefix = "xaml", Uri = "http://schemas.microsoft.com/winfx/2006/xaml/presentation", IsSelected = true },
+            new NamespaceItem { Prefix = "x", Uri = "http://schemas.microsoft.com/winfx/2006/xaml", IsSelected = true },
+            new NamespaceItem { Prefix = "od", Uri = "http://www.sanatorium-is.ru/officeDocument", IsSelected = true },
+            new NamespaceItem { Prefix = "precompile", Uri = "http://www.sanatorium-is.ru/premetadata", IsSelected = true },
+            new NamespaceItem { Prefix = "p", Uri = "clr-namespace:Markup.Programming;assembly=Markup.Programming", IsSelected = false }
+        };
+
+        private void OpenBlocksSettings()
+        {
+            var settingsWindow = new Views.BlocksSettingsWindow(_blocksSettings);
+            settingsWindow.Owner = Application.Current.MainWindow;
+            if (settingsWindow.ShowDialog() == true)
+            {
+                _blocksSettings = settingsWindow.ViewModel;
+                UpdateBlocksInTree(); // Обновляем отображение в дереве
+            }
+        }
+        private void UpdateBlocksInTree()
+        {
+            // Собираем все блоки, которые нужно удалить
+            var itemsToRemove = RootItems
+                .Where(item => item is string block && block.StartsWith(""))
+                .ToList();
+
+            // Удаляем их по одному
+            foreach (var item in itemsToRemove)
+            {
+                RootItems.Remove(item);
+            }
+
+            // Добавляем новые, если выбраны
+            if (_blocksSettings.IsDiagnosis)
+                RootItems.Add("Диагнозы");
+            if (_blocksSettings.IsAssignments)
+                RootItems.Add("Назначения");
+            if (_blocksSettings.IsTreatmentActions)
+                RootItems.Add("Лечебные действия");
+            if (_blocksSettings.IsAttachments)
+                RootItems.Add("Вложения");
+        }
+
+
         private void OpenTypeSettings()
         {
             var settingsWindow = new Views.TypeSettingsWindow(_typeSettings);
@@ -833,6 +869,31 @@ namespace XmlGeneratorNew.ViewModels
                         writer.WriteEndElement();
                     }
                     // --- Конец вставки ---
+                    // --- Вставка блоков ---
+                    if (_blocksSettings.IsDiagnosis)
+                    {
+                        writer.WriteStartElement("e", "diagnosisSelection", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteEndElement();
+                    }
+
+                    if (_blocksSettings.IsAssignments)
+                    {
+                        writer.WriteStartElement("e", "assignmentsView", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteEndElement();
+                    }
+
+                    if (_blocksSettings.IsTreatmentActions)
+                    {
+                        writer.WriteStartElement("e", "treatmentActions", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteEndElement();
+                    }
+
+                    if (_blocksSettings.IsAttachments)
+                    {
+                        writer.WriteStartElement("e", "attachments", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteEndElement();
+                    }
+                    // --- Конец вставки блоков ---
                     writer.WriteEndElement();
                     writer.WriteEndDocument();
                     MessageBox.Show($"XML успешно сохранён в:\n{currentSavePath}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);

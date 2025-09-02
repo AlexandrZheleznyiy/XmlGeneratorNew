@@ -9,8 +9,8 @@
         Title="XmlGeneratorNew" Height="800" Width="1100"
         Background="#fafafa"
         FontFamily="Segoe UI, Segoe UI Symbol, Segoe WP"
-        SnapsToDevicePixels="True">
-
+        SnapsToDevicePixels="True"
+        xmlns:system="clr-namespace:System;assembly=mscorlib">
     <Window.Resources>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:TreeViewItemLevelToVisibilityConverter x:Key="LevelToVisibilityConverter"/>
@@ -114,6 +114,14 @@
             </Setter>
             <Setter Property="Margin" Value="{Binding RelativeSource={RelativeSource Self}, Converter={StaticResource LevelToMarginConverter}}"/>
         </Style>
+
+        <!-- Шаблон для строк-блоков в дереве -->
+        <DataTemplate DataType="{x:Type system:String}">
+            <TextBlock Text="{Binding}"
+                      FontStyle="Italic"
+                      Foreground="DarkSlateGray"
+                      FontSize="13"/>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid Margin="16">
@@ -127,7 +135,7 @@
         <!-- Заголовок -->
         <TextBlock Grid.Row="0" Text="Генератор XML" FontSize="26" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,5" HorizontalAlignment="Center"/>
 
-        <!-- Пространства имён -->
+        <!-- Кнопки: Пространство имён / Тип / Блоки -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,5">
             <Button Width="130" Height="20" Command="{Binding OpenNamespaceSettingsCommand}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -137,6 +145,9 @@
             </Button>
             <Button Width="100" Height="20" Margin="10,0,0,0" Command="{Binding OpenTypeSettingsCommand}">
                 <TextBlock Text="Тип" HorizontalAlignment="Center"/>
+            </Button>
+            <Button Width="100" Height="20" Margin="10,0,0,0" Command="{Binding OpenBlocksSettingsCommand}">
+                <TextBlock Text="Блоки" HorizontalAlignment="Center"/>
             </Button>
         </StackPanel>
 
@@ -151,37 +162,31 @@
             <!-- Дерево -->
             <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="10" BorderBrush="#E0E0E0" BorderThickness="1">
                 <TreeView x:Name="MainTreeView" ItemsSource="{Binding RootItems}"
-          SelectedItemChanged="TreeView_SelectedItemChanged"
-          PreviewMouseLeftButtonDown="TreeView_PreviewMouseLeftButtonDown"
-          MouseMove="TreeView_MouseMove"
-          Drop="TreeView_Drop"
-          DragOver="TreeView_DragOver"
-          AllowDrop="True"
-          KeyDown="TreeView_KeyDown"
-          Background="Transparent" BorderThickness="0">
-
-                    <!-- InputBindings: Ctrl+D -->
+                          SelectedItemChanged="TreeView_SelectedItemChanged"
+                          PreviewMouseLeftButtonDown="TreeView_PreviewMouseLeftButtonDown"
+                          MouseMove="TreeView_MouseMove"
+                          Drop="TreeView_Drop"
+                          DragOver="TreeView_DragOver"
+                          AllowDrop="True"
+                          KeyDown="TreeView_KeyDown"
+                          Background="Transparent" BorderThickness="0">
                     <TreeView.InputBindings>
                         <KeyBinding Key="D" Modifiers="Control" 
                                     Command="{Binding DataContext.DuplicateCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
                     </TreeView.InputBindings>
-
-                    <!-- Контекстное меню -->
                     <TreeView.ItemContainerStyle>
                         <Style BasedOn="{StaticResource TreeViewItemWithLine}" TargetType="TreeViewItem">
                             <Setter Property="ContextMenu">
                                 <Setter.Value>
                                     <ContextMenu>
                                         <MenuItem Header="Дубль"
-          Command="{Binding DataContext.DuplicateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-          CommandParameter="{Binding}" />
+                                                  Command="{Binding DataContext.DuplicateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  CommandParameter="{Binding}" />
                                     </ContextMenu>
                                 </Setter.Value>
                             </Setter>
                         </Style>
                     </TreeView.ItemContainerStyle>
-
-                    <!-- Шаблоны данных -->
                     <TreeView.Resources>
                         <HierarchicalDataTemplate DataType="{x:Type models:SectionItem}" ItemsSource="{Binding Children}">
                             <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#2196F3" FontSize="15"/>
@@ -349,9 +354,9 @@
                             </ContentControl.Resources>
                         </ContentControl>
                         <TextBlock Text="Выберите элемент для редактирования"
-                                   FontStyle="Italic" Foreground="Gray"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Visibility="{Binding SelectedItem, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                  FontStyle="Italic" Foreground="Gray"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Visibility="{Binding SelectedItem, Converter={StaticResource NullToVisibilityConverter}}"/>
                     </Grid>
                 </ScrollViewer>
             </Border>
