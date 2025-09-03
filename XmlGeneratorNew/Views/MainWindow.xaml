@@ -15,6 +15,7 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:TreeViewItemLevelToVisibilityConverter x:Key="LevelToVisibilityConverter"/>
         <converters:TreeViewItemLevelToMarginConverter x:Key="LevelToMarginConverter" Indent="5"/>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <!--  Стиль  TreeViewItem  с   линиями  -->
         <Style x:Key="TreeViewItemWithLine" TargetType="TreeViewItem">
             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -312,28 +313,50 @@
                                             <ComboBoxItem Content="Bool"/>
                                             <ComboBoxItem Content="Const"/>
                                         </ComboBox>
+
+                                        <!-- Поле value с условным рендерингом -->
                                         <TextBlock Text="value:"/>
-                                        <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:separator:"/>
-                                        <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <ComboBox 
+            SelectedValue="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            SelectedValuePath="Content"
+            Margin="0,0,0,10"
+            Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=Bool}">
+                                            <ComboBoxItem Content="True"/>
+                                            <ComboBoxItem Content="False"/>
+                                        </ComboBox>
+                                        <TextBox 
+            Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+            Margin="0,0,0,10"
+            Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+
+                                        <!-- Поля, отображаемые только для String и Const -->
+                                        <TextBlock Text="e:separator:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+                                        <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+
+                                        <!-- Поля e:suffix и od:suffix теперь отображаются для String, Const и Bool -->
                                         <TextBlock Text="e:suffix:"/>
                                         <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:separator:"/>
-                                        <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="od:separator:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+                                        <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
                                         <TextBlock Text="od:suffix:"/>
                                         <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="xaml:MinWidth:"/>
-                                        <TextBox Text="{Binding MinWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="xaml:MinLines:"/>
-                                        <TextBox Text="{Binding MinLines, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:autoSuggestName:"/>
-                                        <TextBox Text="{Binding AutoSuggestName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="semd:"/>
-                                        <StackPanel Orientation="Horizontal">
+
+                                        <!-- Поля, отображаемые только для String -->
+                                        <TextBlock Text="xaml:MinWidth:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+                                        <TextBox Text="{Binding MinWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+                                        <TextBlock Text="xaml:MinLines:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+                                        <TextBox Text="{Binding MinLines, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+                                        <TextBlock Text="e:autoSuggestName:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+                                        <TextBox Text="{Binding AutoSuggestName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+
+                                        <!-- Поле semd (видимость зависит от типа, НЕ отображается для Bool) -->
+                                        <TextBlock Text="semd:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+                                        <StackPanel Orientation="Horizontal"
+                    Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}">
                                             <ComboBox SelectedValue="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                      SelectedValuePath="Content"
-                                                      Width="150"
-                                                      Margin="0,0,5,0">
+                      SelectedValuePath="Content"
+                      Width="150"
+                      Margin="0,0,5,0">
                                                 <ComboBoxItem Content=""/>
                                                 <ComboBoxItem Content="DiseaseAnamnesis"/>
                                                 <ComboBoxItem Content="LifeAnamnesis"/>
@@ -341,7 +364,9 @@
                                             </ComboBox>
                                             <TextBlock Text="(если пусто, будет использовано значение из поля ниже)" FontSize="10" Foreground="Gray" VerticalAlignment="Center"/>
                                         </StackPanel>
-                                        <TextBox Text="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,10"/>
+                                        <TextBox Text="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                 Margin="0,5,0,10" 
+                 Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </ContentControl.Resources>

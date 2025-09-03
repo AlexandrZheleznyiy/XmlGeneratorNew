@@ -52,5 +52,25 @@ namespace XmlGeneratorNew.Models
 
         [ObservableProperty]
         private string semd = "";
+
+        // Метод, вызываемый CommunityToolkit.Mvvm после изменения свойства Type
+        partial void OnTypeChanged(PropertyType value)
+        {
+            // Если тип изменен на Bool и текущее значение Value не "True" или "False",
+            // устанавливаем значение по умолчанию "False".
+            if (value == PropertyType.Bool)
+            {
+                if (this.value?.ToLowerInvariant() != "true" && this.value?.ToLowerInvariant() != "false")
+                {
+                    // Используем поле напрямую, чтобы избежать повторного срабатывания OnPropertyChanged/OnTypeChanged
+                    // если бы мы использовали свойство Value.
+                    this.value = "False";
+                    // Поскольку мы изменили поле напрямую, нужно вручную уведомить об изменении свойства.
+                    OnPropertyChanged(nameof(Value));
+                }
+            }
+            // Для других типов мы не изменяем Value, оставляя его как есть.
+            // Если нужно сбросить Value при изменении типа, добавьте логику здесь.
+        }
     }
 }
