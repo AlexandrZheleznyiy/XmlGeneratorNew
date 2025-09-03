@@ -208,12 +208,12 @@
                                 <!-- Здесь шаблоны редактирования (оставь как есть) -->
                                 <DataTemplate DataType="{x:Type models:SectionItem}">
                                     <StackPanel>
-                                        <TextBlock Text=" Редактирование   секции " FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
-                                        <TextBlock Text=" Код  (code):"/>
+                                        <TextBlock Text="Редактирование секции" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Код (code):"/>
                                         <TextBox Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text=" Имя  (name):"/>
+                                        <TextBlock Text="Имя (name):"/>
                                         <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text=" Заголовок  (title):"/>
+                                        <TextBlock Text="Заголовок (title):"/>
                                         <TextBox Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <TextBlock Text="semd:"/>
                                         <StackPanel Orientation="Horizontal">
