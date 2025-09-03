@@ -13,7 +13,7 @@ namespace XmlGeneratorNew.ViewModels
         [ObservableProperty]
         private bool _isLaboratory;
 
-        public TypeSettingsViewModel(bool isConsultation = true, bool isInstrumental = false, bool isLaboratory = false)
+        public TypeSettingsViewModel(bool isConsultation = false, bool isInstrumental = false, bool isLaboratory = false)
         {
             IsConsultation = isConsultation;
             IsInstrumental = isInstrumental;

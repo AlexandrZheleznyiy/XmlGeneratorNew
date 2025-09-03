@@ -73,45 +73,41 @@ namespace XmlGeneratorNew.Views
 
         private void TreeView_DragOver(object sender, DragEventArgs e)
         {
-            object? targetData = GetDataContextTreeViewItem(e);
-
-            if (!e.Data.GetDataPresent("myFormat") || targetData == null)
+            if (!e.Data.GetDataPresent("myFormat"))
             {
                 e.Effects = DragDropEffects.None;
+                e.Handled = true;
+                return;
             }
-            else
-            {
-                e.Effects = DragDropEffects.Move;
-            }
+
+            object? targetData = GetDataContextTreeViewItem(e);
+            e.Effects = DragDropEffects.Move;
             e.Handled = true;
         }
 
         private void TreeView_Drop(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent("myFormat"))
-            {
-                object? draggedData = e.Data.GetData("myFormat");
-                object? targetData = GetDataContextTreeViewItem(e);
+            if (!e.Data.GetDataPresent("myFormat")) return;
 
-                if (draggedData != null)
-                {
-                    if (DataContext is MainViewModel vm)
-                    {
-                        vm.HandleDrop(draggedData, targetData);
-                    }
-                }
+            object? draggedData = e.Data.GetData("myFormat");
+            object? targetData = GetDataContextTreeViewItem(e);
+
+            if (draggedData == null) return;
+
+            if (DataContext is MainViewModel vm)
+            {
+                vm.HandleDrop(draggedData, targetData);
             }
+
             e.Handled = true;
         }
         private object? GetDataContextTreeViewItem(DragEventArgs e)
         {
-            Point position = e.GetPosition(treeView); // treeView - ваш TreeView (присвойте при InitializeComponent)
+            Point position = e.GetPosition(treeView);
             HitTestResult hit = VisualTreeHelper.HitTest(treeView, position);
-
             if (hit == null) return null;
 
             DependencyObject? current = hit.VisualHit;
-
             while (current != null && !(current is TreeViewItem))
             {
                 current = VisualTreeHelper.GetParent(current);
