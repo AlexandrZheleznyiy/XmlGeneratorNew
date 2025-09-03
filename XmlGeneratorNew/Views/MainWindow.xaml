@@ -171,15 +171,6 @@
                     </TreeView.InputBindings>
                     <TreeView.ItemContainerStyle>
                         <Style BasedOn="{StaticResource TreeViewItemWithLine}" TargetType="TreeViewItem">
-                            <Setter Property="ContextMenu">
-                                <Setter.Value>
-                                    <ContextMenu>
-                                        <MenuItem Header="Дубль"
-                                                  Command="{Binding DataContext.DuplicateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  CommandParameter="{Binding}" />
-                                    </ContextMenu>
-                                </Setter.Value>
-                            </Setter>
                         </Style>
                     </TreeView.ItemContainerStyle>
                     <TreeView.Resources>

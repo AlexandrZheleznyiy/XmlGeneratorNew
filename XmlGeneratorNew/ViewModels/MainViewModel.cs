@@ -403,70 +403,7 @@ namespace XmlGeneratorNew.ViewModels
             return null;
         }
 
-        private bool RemovePropertyFromSections(IEnumerable<SectionItem> sections, PropertyItem target)
-        {
-            foreach (var section in sections)
-            {
-                if (section.Properties.Contains(target))
-                {
-                    return section.RemoveProperty(target);
-                }
-            }
-            return false;
-        }
-
-        // Вспомогательный метод для поиска и удаления свойства с определением родителя
-        private object? FindAndRemoveProperty(PropertyItem target, out bool removed)
-        {
-            removed = false;
-            // Поиск в группах внутри секций
-            foreach (var section in RootItems.OfType<SectionItem>())
-            {
-                foreach (var group in section.Groups)
-                {
-                    if (group.Properties.Contains(target))
-                    {
-                        removed = group.RemoveChild(target);
-                        return group; //   Возвращаем   родителя   (GroupItem)
-                    }
-                    var foundParent = FindPropertyInGroupAndRemove(target, group);
-                    if (foundParent != null)
-                    {
-                        return foundParent; //   Родитель   уже   определен   внутри   рекурсии
-                    }
-                }
-            }
-            //   Поиск   в   корневых   группах
-            foreach (var group in RootItems.OfType<GroupItem>())
-            {
-                if (group.Properties.Contains(target))
-                {
-                    removed = group.RemoveChild(target);
-                    return group; //   Возвращаем   родителя   (GroupItem)
-                }
-                var foundParent = FindPropertyInGroupAndRemove(target, group);
-                if (foundParent != null)
-                {
-                    return foundParent; //   Родитель   уже   определен   внутри   рекурсии
-                }
-            }
-            // Поиск в секциях (свойства напрямую в секциях)
-            foreach (var section in RootItems.OfType<SectionItem>())
-            {
-                if (section.Properties.Contains(target))
-                {
-                    removed = section.RemoveProperty(target);
-                    return section; //   Возвращаем   родителя   (SectionItem)
-                }
-            }
-            //   Поиск   в   корне
-            if (RootItems.Contains(target))
-            {
-                removed = RootItems.Remove(target);
-                return null; //   Родитель   корневого   элемента   -   это   сам   RootItems
-            }
-            return null;
-        }
+        
 
         // Рекурсивный поиск и удаление свойства в группе с определением родителя
         private GroupItem? FindPropertyInGroupAndRemove(PropertyItem target, GroupItem group)
@@ -519,40 +456,7 @@ namespace XmlGeneratorNew.ViewModels
             return null;
         }
 
-        // Вспомогательный метод для поиска и удаления группы с определением родителя
-        private object? FindAndRemoveGroup(GroupItem target, out bool removed)
-        {
-            removed = false;
-            //   Поиск   в   секциях
-            foreach (var section in RootItems.OfType<SectionItem>())
-            {
-                if (section.Groups.Contains(target))
-                {
-                    removed = section.RemoveGroup(target);
-                    return section; //   Возвращаем   родителя   (SectionItem)
-                }
-                var foundParent = FindGroupInGroupsAndRemove(target, section.Groups);
-                if (foundParent != null)
-                {
-                    return foundParent; //   Родитель   уже   определен   внутри   рекурсии
-                }
-            }
-            //   Поиск   в   группах
-            foreach (var group in RootItems.OfType<GroupItem>())
-            {
-                if (group.Groups.Contains(target))
-                {
-                    removed = group.RemoveChild(target);
-                    return group; //   Возвращаем   родителя   (GroupItem)
-                }
-                var foundParent = FindGroupInGroupsAndRemove(target, group.Groups);
-                if (foundParent != null)
-                {
-                    return foundParent; //   Родитель   уже   определен   внутри   рекурсии
-                }
-            }
-            return null;
-        }
+        
 
         // Рекурсивный поиск и удаление группы в группах с определением родителя
         private GroupItem? FindGroupInGroupsAndRemove(GroupItem target, ObservableCollection<GroupItem> groups)
@@ -571,21 +475,7 @@ namespace XmlGeneratorNew.ViewModels
             return null;
         }
 
-        private bool RemoveGroup(IEnumerable<SectionItem> sections, GroupItem target)
-        {
-            foreach (var section in sections)
-            {
-                if (section.RemoveGroup(target))
-                {
-                    return true;
-                }
-                foreach (var group in section.Groups)
-                {
-                    if (RemoveGroup(group.Groups, target)) return true;
-                }
-            }
-            return false;
-        }
+        
 
         private bool RemoveGroup(IEnumerable<GroupItem> groups, GroupItem target)
         {
@@ -600,26 +490,7 @@ namespace XmlGeneratorNew.ViewModels
             return false;
         }
 
-        private bool RemovePropertyFromGroups(IEnumerable<SectionItem> sections, PropertyItem target)
-        {
-            foreach (var section in sections)
-            {
-                foreach (var group in section.Groups)
-                {
-                    if (RemovePropertyFromGroup(group, target)) return true;
-                }
-            }
-            return false;
-        }
-
-        private bool RemovePropertyFromGroups(IEnumerable<GroupItem> groups, PropertyItem target)
-        {
-            foreach (var group in groups)
-            {
-                if (RemovePropertyFromGroup(group, target)) return true;
-            }
-            return false;
-        }
+        
 
         private bool RemovePropertyFromGroup(GroupItem group, PropertyItem target)
         {
@@ -871,11 +742,6 @@ namespace XmlGeneratorNew.ViewModels
                             //  Записываем   типы   как   строки (если они попали сюда)
                             case string str when IsFooterString(str):
                                 // Обрабатываем строки-типы
-                                WriteFooterItem(writer, str);
-                                break;
-                            //  Записываем   блоки   как   строки (если они попали сюда)
-                            case string str when IsFooterString(str):
-                                // Обрабатываем строки-блоки
                                 WriteFooterItem(writer, str);
                                 break;
                         }
