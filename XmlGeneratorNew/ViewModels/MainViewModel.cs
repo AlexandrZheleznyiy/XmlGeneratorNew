@@ -1217,13 +1217,26 @@ namespace XmlGeneratorNew.ViewModels
                 }
             }
 
+
+
             // --- Обработка перемещения основных элементов ---
             // Запретить вложение секции в секцию
-            if (draggedItem is SectionItem && targetItem is SectionItem)
+            // --- НОВАЯ ЛОГИКА: Запретить вложение группы в саму себя или её потомков ---
+            if (draggedItem is GroupItem draggedGroup && targetItem is GroupItem targetGroup)
             {
-                // Игнорируем или можно просто не менять вложенность
-                return;
+                // Проверяем, является ли targetGroup потомком draggedGroup
+                if (IsDescendantOf(targetGroup, draggedGroup))
+                {
+                    // Попытка вложить группу в себя или своего потомка - запрещаем
+                    System.Diagnostics.Debug.WriteLine($"[VM] Drop rejected: Cannot drop group '{draggedGroup.Name}' into itself or its descendant '{targetGroup.Name}'.");
+                    // Ничего не делаем, просто выходим
+                    return;
+                }
+                // Если проверка пройдена, логика добавления группы в группу остается стандартной
+                // (ниже в оригинальном коде HandleDrop)
             }
+
+
             // Удаляем draggedItem из текущего места
             RemoveItem(draggedItem);
             if (targetItem == null)
@@ -1256,6 +1269,28 @@ namespace XmlGeneratorNew.ViewModels
                     break;
             }
             SelectedItem = draggedItem;
+        }
+        private bool IsDescendantOf(object potentialDescendant, object potentialAncestor)
+        {
+            if (potentialDescendant == null || potentialAncestor == null)
+                return false;
+
+            // Начинаем с родителя потенциального потомка
+            object? currentParent = FindParent(potentialDescendant);
+
+            while (currentParent != null)
+            {
+                if (currentParent == potentialAncestor)
+                {
+                    // Нашли предка - значит, элемент является потомком
+                    return true;
+                }
+                // Поднимаемся на уровень выше
+                currentParent = FindParent(currentParent);
+            }
+
+            // Достигли корня, предок не найден
+            return false;
         }
 
         // --- Убедитесь, что RemoveItem корректно обрабатывает строки футера ---
