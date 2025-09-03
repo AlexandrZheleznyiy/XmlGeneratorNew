@@ -357,17 +357,17 @@ namespace XmlGeneratorNew.ViewModels
             // Поиск в группах внутри секций
             foreach (var section in RootItems.OfType<SectionItem>())
             {
-                foreach (var group in section.Groups)
+                foreach (var groupInSection in section.Groups) // <-- Переименовано
                 {
-                    if (group.Properties.Contains(target))
+                    if (groupInSection.Properties.Contains(target))
                     {
-                        removed = group.RemoveChild(target);
-                        return group; //   Возвращаем   родителя   (GroupItem)
+                        removed = groupInSection.RemoveChild(target);
+                        return groupInSection; // Возвращаем родителя (GroupItem)
                     }
-                    var foundParent = FindPropertyInGroupAndRemove(target, group);
+                    var foundParent = FindPropertyInGroupAndRemove(target, groupInSection); // <-- Переименовано
                     if (foundParent != null)
                     {
-                        return foundParent; //   Родитель   уже   определен   внутри   рекурсии
+                        return foundParent;
                     }
                 }
             }
@@ -1261,46 +1261,73 @@ namespace XmlGeneratorNew.ViewModels
         // --- Убедитесь, что RemoveItem корректно обрабатывает строки футера ---
         private void RemoveItem(object item)
         {
+            // Проверка для основных элементов в корне
             if (RootItems.Contains(item))
             {
                 RootItems.Remove(item);
                 return;
             }
-            if (FooterItems.Contains((string)item)) // Проверка для строк футера
+
+            // Проверка для строк футера (строки)
+            // Убедимся, что item действительно строка, прежде чем приводить
+            if (item is string itemAsString && FooterItems.Contains(itemAsString))
             {
-                FooterItems.Remove((string)item);
+                FooterItems.Remove(itemAsString);
                 return;
             }
+
+            // Обработка PropertyItem
             if (item is PropertyItem prop)
             {
                 var parent = FindParent(item);
                 if (parent is SectionItem section)
                     section.RemoveProperty(prop);
-                else if (parent is GroupItem group)
-                    group.RemoveChild(prop);
+                else if (parent is GroupItem groupParent) // <-- Переименовано
+                    groupParent.RemoveChild(prop);       // <-- Переименовано
+                                                         // Родитель не найден или не поддерживаемый тип - игнорируем или логируем
+                return;
             }
-            else if (item is GroupItem group)
+
+            // Обработка GroupItem
+            if (item is GroupItem group) // <-- Осталось оригинальное имя, так как оно уникально в этой области
             {
                 var parent = FindParent(item);
                 if (parent is SectionItem section)
                     section.RemoveGroup(group);
-                else if (parent is GroupItem groupParent)
-                    groupParent.RemoveChild(group);
+                else if (parent is GroupItem groupParentItem) // <-- Переименовано для ясности и избежания конфликта
+                    groupParentItem.RemoveChild(group);      // <-- Переименовано
+                                                             // Родитель не найден или не поддерживаемый тип - игнорируем или логируем
+                return;
             }
-            else if (item is SectionItem section)
+
+            // Обработка SectionItem
+            if (item is SectionItem sectionItem)
             {
-                RootItems.Remove(section);
+                // SectionItem всегда в RootItems
+                RootItems.Remove(sectionItem);
+                return;
             }
-            else if (item is string blockString && IsFooterString(blockString))
+
+            // Обработка строк футера, если они как-то оказались не в FooterItems, но item - строка
+            // Это дублирует логику выше, но на случай, если логика удаления будет сложнее
+            // Проверка IsFooterString добавлена для дополнительной безопасности
+            if (item is string itemStr && IsFooterString(itemStr))
             {
-                //  Удаляем   строку   блока
-                FooterItems.Remove(blockString); // Удаляем из FooterItems
+                // Убедимся, что удаляем из FooterItems, если он там есть
+                if (FooterItems.Contains(itemStr))
+                {
+                    FooterItems.Remove(itemStr);
+                }
+                // Если строка-футер оказалась в RootItems (не рекомендуется, но возможно в логике)
+                // else if (RootItems.Contains(itemStr))
+                // {
+                //     RootItems.Remove(itemStr);
+                // }
+                return;
             }
-            else if (item is string typeString && IsFooterString(typeString))
-            {
-                //  Удаляем   строку   типа
-                FooterItems.Remove(typeString); // Удаляем из FooterItems
-            }
+
+            // Если объект не распознан или уже удален, можно ничего не делать
+            // Или добавить логирование для отладки: System.Diagnostics.Debug.WriteLine($"Item not found or unsupported type for removal: {item?.GetType().Name ?? "null"}");
         }
 
         // --- Убедитесь, что InsertAfter корректно обрабатывает строки футера ---
