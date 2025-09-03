@@ -607,14 +607,15 @@ namespace XmlGeneratorNew.ViewModels
                 Code = (string?)element.Attribute("code") ?? "",
                 Name = (string?)element.Attribute("name") ?? "",
                 Title = (string?)element.Attribute("title") ?? "",
-                Semd = (string?)element.Attribute("semd") ?? ""
+                Semd = (string?)element.Attribute("semd") ?? "",
+                Uid = (string?)element.Attribute("uid") ?? "" // НОВОЕ
             };
             foreach (var groupElem in element.Elements("group"))
             {
                 var group = ParseGroup(groupElem);
                 section.AddGroup(group);
             }
-            //   Добавляем   поддержку   свойств   в   секции
+            // Добавляем поддержку свойств в секции
             foreach (var propElem in element.Elements("property"))
             {
                 var prop = ParseProperty(propElem);
@@ -639,15 +640,18 @@ namespace XmlGeneratorNew.ViewModels
                 OdSuffix = (string?)element.Attribute(XName.Get("suffix", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 OdGroupMode = (string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 ECaptionStyle = (string?)element.Attribute(XName.Get("captionStyle", "http://www.sanatorium-is.ru/editor")) ?? "",
-                OdGroupStyle = (string?)element.Attribute(XName.Get("groupStyle", "http://www.sanatorium-is.ru/officeDocument")) ?? ""
+                OdGroupStyle = (string?)element.Attribute(XName.Get("groupStyle", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
+                Semd = (string?)element.Attribute("semd") ?? "", // Добавлено
+                Uid = (string?)element.Attribute("uid") ?? "" // НОВОЕ
             };
-            //   Добавляем   проверку   для   новых   свойств
+            // Добавляем проверку для новых свойств
             group.OdGroupModeIsParagraph = !string.IsNullOrEmpty((string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument"))) &&
                                            ((string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument")) == "paragraph");
             group.ECaptionStyleIsGroupHeader = !string.IsNullOrEmpty((string?)element.Attribute(XName.Get("captionStyle", "http://www.sanatorium-is.ru/editor"))) &&
                                                ((string?)element.Attribute(XName.Get("captionStyle", "http://www.sanatorium-is.ru/editor")) == "GroupHeader");
             group.OdGroupStyleIsNewParagraphBoldHeader = !string.IsNullOrEmpty((string?)element.Attribute(XName.Get("groupStyle", "http://www.sanatorium-is.ru/officeDocument"))) &&
                                                          ((string?)element.Attribute(XName.Get("groupStyle", "http://www.sanatorium-is.ru/officeDocument")) == "NewParagraphBoldHeader");
+
             foreach (var child in element.Elements())
             {
                 switch (child.Name.LocalName)
@@ -682,7 +686,8 @@ namespace XmlGeneratorNew.ViewModels
                 MinLines = (string?)element.Attribute(XName.Get("MinLines", "http://schemas.microsoft.com/winfx/2006/xaml/presentation")) ?? "",
                 AutoSuggestName = (string?)element.Attribute(XName.Get("autoSuggestName", "http://www.sanatorium-is.ru/editor")) ?? "",
                 Value = (string?)element.Attribute("value") ?? "",
-                Semd = (string?)element.Attribute("semd") ?? ""
+                Semd = (string?)element.Attribute("semd") ?? "", // Добавлено
+                Uid = (string?)element.Attribute("uid") ?? "" // НОВОЕ
             };
             string typeStr = (string?)element.Attribute("type") ?? "string";
             prop.Type = typeStr switch
@@ -836,9 +841,13 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("e", "captionStyle", null, "GroupHeader");
             if (group.OdGroupStyleIsNewParagraphBoldHeader)
                 writer.WriteAttributeString("od", "groupStyle", null, "NewParagraphBoldHeader");
-            //   Добавлено  :   запись   атрибута   semd
+            // Добавлено: запись атрибута semd
             if (!string.IsNullOrEmpty(group.Semd))
                 writer.WriteAttributeString("semd", null, group.Semd);
+            // НОВОЕ: запись атрибута uid, если он не пуст
+            if (!string.IsNullOrEmpty(group.Uid))
+                writer.WriteAttributeString("uid", group.Uid);
+
             foreach (var prop in group.Properties)
                 WriteProperty(writer, prop);
             foreach (var subgroup in group.Groups)
@@ -875,8 +884,13 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("xaml", "MinLines", null, prop.MinLines);
             if (!string.IsNullOrEmpty(prop.AutoSuggestName))
                 writer.WriteAttributeString("e", "autoSuggestName", null, prop.AutoSuggestName);
+            // Добавлено: запись атрибута semd
             if (!string.IsNullOrEmpty(prop.Semd))
                 writer.WriteAttributeString("semd", null, prop.Semd);
+            // НОВОЕ: запись атрибута uid, если он не пуст
+            if (!string.IsNullOrEmpty(prop.Uid))
+                writer.WriteAttributeString("uid", prop.Uid);
+
             writer.WriteEndElement();
         }
 
@@ -888,8 +902,13 @@ namespace XmlGeneratorNew.ViewModels
             writer.WriteAttributeString("name", section.Name ?? "");
             if (!string.IsNullOrEmpty(section.Title))
                 writer.WriteAttributeString("title", section.Title);
+            // Добавлено: запись атрибута semd
             if (!string.IsNullOrEmpty(section.Semd))
                 writer.WriteAttributeString("semd", section.Semd);
+            // НОВОЕ: запись атрибута uid, если он не пуст
+            if (!string.IsNullOrEmpty(section.Uid))
+                writer.WriteAttributeString("uid", section.Uid);
+
             foreach (var group in section.Groups)
                 WriteGroup(writer, group);
             foreach (var prop in section.Properties)
@@ -936,9 +955,10 @@ namespace XmlGeneratorNew.ViewModels
             var newSection = new SectionItem
             {
                 Code = section.Code,
-                Name = $"{section.Name}",
+                Name = $"{section.Name}", // Пример изменения имени
                 Title = section.Title,
                 Semd = section.Semd,
+                Uid = section.Uid, // ИЛИ Uid = "" если хотите сбросить
                 IsExpanded = section.IsExpanded
             };
             foreach (var group in section.Groups)
@@ -952,7 +972,7 @@ namespace XmlGeneratorNew.ViewModels
         {
             var newGroup = new GroupItem
             {
-                Name = $"{group.Name}",
+                Name = $"{group.Name}", // Пример изменения имени
                 Caption = group.Caption,
                 OdCaption = group.OdCaption,
                 Layout = group.Layout,
@@ -967,6 +987,7 @@ namespace XmlGeneratorNew.ViewModels
                 OdGroupStyle = group.OdGroupStyle,
                 OdGroupStyleIsNewParagraphBoldHeader = group.OdGroupStyleIsNewParagraphBoldHeader,
                 Semd = group.Semd,
+                Uid = group.Uid, // ИЛИ Uid = "" если хотите сбросить
                 IsExpanded = group.IsExpanded
             };
             foreach (var subgroup in group.Groups)
@@ -980,7 +1001,7 @@ namespace XmlGeneratorNew.ViewModels
         {
             return new PropertyItem
             {
-                Name = $"{prop.Name}",
+                Name = $"{prop.Name}", // Пример изменения имени
                 Caption = prop.Caption,
                 OdCaption = prop.OdCaption,
                 Separator = prop.Separator,
@@ -992,7 +1013,8 @@ namespace XmlGeneratorNew.ViewModels
                 AutoSuggestName = prop.AutoSuggestName,
                 Value = prop.Value,
                 Type = prop.Type,
-                Semd = prop.Semd
+                Semd = prop.Semd,
+                Uid = prop.Uid // ИЛИ Uid = "" если хотите сбросить
             };
         }
 

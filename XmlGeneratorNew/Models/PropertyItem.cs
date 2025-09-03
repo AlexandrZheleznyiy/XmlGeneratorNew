@@ -53,6 +53,9 @@ namespace XmlGeneratorNew.Models
         [ObservableProperty]
         private string semd = "";
 
+        [ObservableProperty]
+        private string _uid = "";
+
         // Метод, вызываемый CommunityToolkit.Mvvm после изменения свойства Type
         partial void OnTypeChanged(PropertyType value)
         {

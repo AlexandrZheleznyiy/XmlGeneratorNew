@@ -23,6 +23,9 @@ namespace XmlGeneratorNew.Models
         [ObservableProperty]
         private string semd = "";
 
+        [ObservableProperty]
+        private string _uid = "";
+
         public ObservableCollection<GroupItem> Groups { get; } = new();
         public ObservableCollection<PropertyItem> Properties { get; } = new();
         public ObservableCollection<object> Children { get; } = new();
