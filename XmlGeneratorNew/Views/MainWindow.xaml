@@ -15,8 +15,7 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:TreeViewItemLevelToVisibilityConverter x:Key="LevelToVisibilityConverter"/>
         <converters:TreeViewItemLevelToMarginConverter x:Key="LevelToMarginConverter" Indent="5"/>
-
-        <!-- Стиль TreeViewItem с линиями -->
+        <!--  Стиль  TreeViewItem  с   линиями  -->
         <Style x:Key="TreeViewItemWithLine" TargetType="TreeViewItem">
             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -32,7 +31,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <!-- Вертикальная линия -->
+                                    <!--  Вертикальная   линия  -->
                                     <Border Grid.Column="0"
                                             Width="1"
                                             Margin="8,0,0,0"
@@ -40,7 +39,7 @@
                                             Background="#E0E0E0"
                                             Visibility="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem}, 
                                                                  Converter={StaticResource LevelToVisibilityConverter}}"/>
-                                    <!-- Горизонтальная линия ("ножка") -->
+                                    <!--  Горизонтальная   линия  (" ножка ") -->
                                     <Border x:Name="PART_HorizontalLine"
                                             Grid.Column="1"
                                             Height="1"
@@ -84,14 +83,14 @@
                                             </ToggleButton.Style>
                                         </ToggleButton>
                                     </Grid>
-                                    <!-- Контент -->
+                                    <!--  Контент  -->
                                     <ContentPresenter Grid.Column="3"
                                                       x:Name="PART_Header"
                                                       ContentSource="Header"
                                                       VerticalAlignment="Center"/>
                                 </Grid>
                             </Border>
-                            <!-- Дочерние элементы -->
+                            <!--  Дочерние   элементы  -->
                             <ItemsPresenter x:Name="ItemsHost" Visibility="Collapsed"/>
                         </StackPanel>
                         <ControlTemplate.Triggers>
@@ -114,33 +113,30 @@
             </Setter>
             <Setter Property="Margin" Value="{Binding RelativeSource={RelativeSource Self}, Converter={StaticResource LevelToMarginConverter}}"/>
         </Style>
-
-        <!-- Шаблон для строк-блоков в дереве -->
+        <!-- Шаблон для строк-футеров в основном дереве (если они там окажутся) -->
         <DataTemplate DataType="{x:Type system:String}">
             <TextBlock Text="{Binding}"
-                      FontStyle="Italic"
                       Foreground="DarkSlateGray"
                       FontSize="13"/>
         </DataTemplate>
     </Window.Resources>
-
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="35"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <!-- Для футера -->
+            <RowDefinition Height="Auto"/>
+            <!-- Для кнопок -->
         </Grid.RowDefinitions>
-
-        <!-- Заголовок -->
+        <!--  Заголовок  -->
         <TextBlock Grid.Row="0" Text="Генератор XML" FontSize="26" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,5" HorizontalAlignment="Center"/>
-
         <!-- Кнопки: Пространство имён / Тип / Блоки -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,5">
             <Button Width="130" Height="20" Command="{Binding OpenNamespaceSettingsCommand}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="Пространство имён"/>
-                    <TextBlock Text="!" Foreground="Red" FontWeight="Bold" Margin="3,0,0,0"/>
+                    <TextBlock Text="Пространство имён" />
                 </StackPanel>
             </Button>
             <Button Width="100" Height="20" Margin="10,0,0,0" Command="{Binding OpenTypeSettingsCommand}">
@@ -150,7 +146,6 @@
                 <TextBlock Text="Блоки" HorizontalAlignment="Center"/>
             </Button>
         </StackPanel>
-
         <!-- Дерево и редактор -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
@@ -158,8 +153,7 @@
                 <ColumnDefinition Width="15"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-
-            <!-- Дерево -->
+            <!--  Дерево  -->
             <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="10" BorderBrush="#E0E0E0" BorderThickness="1">
                 <TreeView x:Name="MainTreeView" ItemsSource="{Binding RootItems}"
                           SelectedItemChanged="TreeView_SelectedItemChanged"
@@ -205,8 +199,7 @@
                     </TreeView.Resources>
                 </TreeView>
             </Border>
-
-            <!-- Редактор -->
+            <!--  Редактор  -->
             <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="15" BorderBrush="#E0E0E0" BorderThickness="1">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="10">
                     <Grid>
@@ -215,12 +208,12 @@
                                 <!-- Здесь шаблоны редактирования (оставь как есть) -->
                                 <DataTemplate DataType="{x:Type models:SectionItem}">
                                     <StackPanel>
-                                        <TextBlock Text="Редактирование секции" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Код (code):"/>
+                                        <TextBlock Text=" Редактирование   секции " FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
+                                        <TextBlock Text=" Код  (code):"/>
                                         <TextBox Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Имя (name):"/>
+                                        <TextBlock Text=" Имя  (name):"/>
                                         <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Заголовок (title):"/>
+                                        <TextBlock Text=" Заголовок  (title):"/>
                                         <TextBox Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                         <TextBlock Text="semd:"/>
                                         <StackPanel Orientation="Horizontal">
@@ -354,16 +347,58 @@
                             </ContentControl.Resources>
                         </ContentControl>
                         <TextBlock Text="Выберите элемент для редактирования"
-                                  FontStyle="Italic" Foreground="Gray"
-                                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                                  Visibility="{Binding SelectedItem, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                   FontStyle="Italic" Foreground="Gray"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Visibility="{Binding SelectedItem, Converter={StaticResource NullToVisibilityConverter}}"/>
                     </Grid>
                 </ScrollViewer>
             </Border>
         </Grid>
-
-        <!-- Кнопки -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+        <!--  Футер  -->
+        <Border Grid.Row="3" Background="#f0f0f0" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,10,0,0">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <ListBox x:Name="FooterListBox"
+                         ItemsSource="{Binding FooterItems}"
+                         SelectedItem="{Binding SelectedItem}"
+                         PreviewMouseLeftButtonDown="FooterListBox_PreviewMouseLeftButtonDown"
+                         MouseMove="FooterListBox_MouseMove"
+                         Drop="FooterListBox_Drop"
+                         DragOver="FooterListBox_DragOver"
+                         AllowDrop="True"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="#ccc" BorderThickness="1" CornerRadius="3" Margin="3" Padding="5" Background="White">
+                                <TextBlock Text="{Binding}" />
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="3"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#e8edec"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </ScrollViewer>
+        </Border>
+        <!--  Кнопки  -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
             <Button Content="Добавить секцию" Command="{Binding AddSectionToRootCommand}" Width="120" Margin="0,0,5,0"/>
             <Button Content="Добавить группу" Command="{Binding AddGroupToRootCommand}" Width="120" Margin="0,0,5,0"/>
             <Button Content="Добавить свойство" Command="{Binding AddPropertyToRootCommand}" Width="120" Margin="0,0,5,0"/>

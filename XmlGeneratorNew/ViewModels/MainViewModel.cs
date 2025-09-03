@@ -9,6 +9,8 @@ using System.Xml.Linq;
 using XmlGeneratorNew.Models;
 using XmlGeneratorNew.Views;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace XmlGeneratorNew.ViewModels
 {
@@ -19,6 +21,8 @@ namespace XmlGeneratorNew.ViewModels
         [ObservableProperty]
         private object? selectedItem;
         public ObservableCollection<object> RootItems { get; } = new();
+        public ObservableCollection<string> FooterItems { get; } = new(); // Новая коллекция для строк-футеров
+
         private TypeSettingsViewModel _typeSettings = new();
         private BlocksSettingsViewModel _blocksSettings = new();
         private int groupIndex = 1;
@@ -38,6 +42,7 @@ namespace XmlGeneratorNew.ViewModels
         public IRelayCommand<object> DuplicateCommand { get; }
         public IRelayCommand OpenTypeSettingsCommand { get; }
         public IRelayCommand OpenBlocksSettingsCommand { get; }
+
         public MainViewModel()
         {
             AddSectionToRootCommand = new RelayCommand(AddSectionToRoot);
@@ -47,7 +52,7 @@ namespace XmlGeneratorNew.ViewModels
             AddGroupCommand = new RelayCommand(AddGroup);
             AddPropertyCommand = new RelayCommand(AddProperty);
             AddSectionCommand = new RelayCommand(AddSection);
-            //   Остальные   команды
+            //    Остальные   команды
             DeleteCommand = new RelayCommand(DeleteSelected, CanDelete);
             ResetCommand = new RelayCommand(ResetAll);
             LoadCommand = new RelayCommand(LoadXml);
@@ -59,6 +64,23 @@ namespace XmlGeneratorNew.ViewModels
             );
             OpenTypeSettingsCommand = new RelayCommand(OpenTypeSettings);
             OpenBlocksSettingsCommand = new RelayCommand(OpenBlocksSettings);
+
+            // Инициализация FooterItems
+            InitializeFooterItems();
+        }
+
+        private void InitializeFooterItems()
+        {
+            // Инициализируем FooterItems с базовыми значениями
+            // Это гарантирует, что они всегда будут внизу, даже если не выбраны
+            FooterItems.CollectionChanged += FooterItems_CollectionChanged;
+            UpdateFooterItemsFromSettings();
+        }
+
+        private void FooterItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            // Уведомляем команды об изменении, если нужно
+            // В данном случае это не критично, но может быть полезно
         }
 
         public ObservableCollection<NamespaceItem> Namespaces { get; } = new()
@@ -78,33 +100,41 @@ namespace XmlGeneratorNew.ViewModels
             if (settingsWindow.ShowDialog() == true)
             {
                 _blocksSettings = settingsWindow.ViewModel;
-                UpdateBlocksInTree(); // Обновляем отображение в дереве
+                UpdateFooterItemsFromSettings(); // Обновляем отображение в футере
             }
         }
 
-        private void UpdateBlocksInTree()
+        private void UpdateFooterItemsFromSettings()
         {
-            // Собираем все блоки, которые нужно удалить
-            var itemsToRemove = RootItems
-                        .Where(item => item is string block && IsBlockString(block))
-                        .ToList();
+            // Создаем временный список, чтобы избежать множественных событий CollectionChanged
+            var newFooterItems = new List<string>();
 
-            // Удаляем их по одному
-            foreach (var item in itemsToRemove)
-            {
-                RootItems.Remove(item);
-            }
-
-            // Добавляем новые, если выбраны
+            // Добавляем в порядке, который вы хотите видеть по умолчанию
+            // Или в том порядке, в котором они были ранее, если сохранять состояние
             if (_blocksSettings.IsDiagnosis)
-                RootItems.Add("Диагнозы");
+                newFooterItems.Add("Диагнозы");
             if (_blocksSettings.IsAssignments)
-                RootItems.Add("Назначения");
+                newFooterItems.Add("Назначения");
             if (_blocksSettings.IsTreatmentActions)
-                RootItems.Add("Лечебные действия");
+                newFooterItems.Add("Лечебные действия");
             if (_blocksSettings.IsAttachments)
-                RootItems.Add("Вложения");
+                newFooterItems.Add("Вложения");
+
+            // Также добавляем "Заключение" из настроек типов
+            if (_typeSettings.IsConsultation || _typeSettings.IsLaboratory || _typeSettings.IsInstrumental)
+                newFooterItems.Add("Заключение");
+
+            // Сравниваем и обновляем FooterItems
+            if (!FooterItems.SequenceEqual(newFooterItems))
+            {
+                FooterItems.Clear();
+                foreach (var item in newFooterItems)
+                {
+                    FooterItems.Add(item);
+                }
+            }
         }
+
 
         private void OpenTypeSettings()
         {
@@ -112,34 +142,15 @@ namespace XmlGeneratorNew.ViewModels
             settingsWindow.Owner = Application.Current.MainWindow;
             if (settingsWindow.ShowDialog() == true)
             {
-                _typeSettings = settingsWindow.ViewModel; //  Сохраняем   настройки
-                UpdateTypesInTree(); // Обновляем отображение типов в дереве
+                _typeSettings = settingsWindow.ViewModel; //   Сохраняем   настройки
+                UpdateFooterItemsFromSettings(); // Обновляем отображение типов в футере
             }
-        }
-
-        // --- Добавляем метод для обновления типов ---
-        private void UpdateTypesInTree()
-        {
-            // Собираем все типы, которые нужно удалить
-            var itemsToRemove = RootItems
-                        .Where(item => item is string type && IsTypeString(type))
-                        .ToList();
-
-            // Удаляем их по одному
-            foreach (var item in itemsToRemove)
-            {
-                RootItems.Remove(item);
-            }
-
-            // Добавляем новые, если выбраны
-            if (_typeSettings.IsConsultation || _typeSettings.IsLaboratory || _typeSettings.IsInstrumental)
-                RootItems.Add("Заключение");
         }
 
         partial void OnSelectedItemChanged(object? oldValue, object? newValue)
         {
             System.Diagnostics.Debug.WriteLine($"[VM] SelectedItem changed from {oldValue?.GetType().Name ?? "null"} to {newValue?.GetType().Name ?? "null"}");
-            //  Уведомляем   команды   о   изменении
+            //   Уведомляем   команды   о   изменении
             DeleteCommand.NotifyCanExecuteChanged();
             AddGroupCommand.NotifyCanExecuteChanged();
             AddPropertyCommand.NotifyCanExecuteChanged();
@@ -255,9 +266,9 @@ namespace XmlGeneratorNew.ViewModels
         private void DeleteSelected()
         {
             if (SelectedItem == null) return;
-            object? itemToRemove = SelectedItem; //  Сохраняем   ссылку   на   удаляемый   элемент
+            object? itemToRemove = SelectedItem; //   Сохраняем   ссылку   на   удаляемый   элемент
             bool removed = false;
-            object? parentContainer = null; //  Для   отслеживания   родителя   вложенных   элементов
+            object? parentContainer = null; //   Для   отслеживания   родителя   вложенных   элементов
 
             // Проверяем, находится ли элемент непосредственно в RootItems
             if (RootItems.Contains(SelectedItem))
@@ -284,7 +295,7 @@ namespace XmlGeneratorNew.ViewModels
                 }
                 else if (SelectedItem is GroupItem group)
                 {
-                    //  Ищем   группу   и   запоминаем   родителя
+                    //   Ищем   группу   и   запоминаем   родителя
                     parentContainer = FindParentOfGroupAndRemove(group, out removed);
                 }
                 else if (SelectedItem is SectionItem section)
@@ -330,9 +341,9 @@ namespace XmlGeneratorNew.ViewModels
                         parentGroup.IsExpanded = !parentGroup.IsExpanded;
                     }
                 }
-                //  Сброс  SelectedItem  во  ViewModel
+                //   Сброс   SelectedItem   во   ViewModel
                 SelectedItem = null;
-                //  Уведомляем   команды
+                //   Уведомляем   команды
                 DeleteCommand.NotifyCanExecuteChanged();
                 AddGroupCommand.NotifyCanExecuteChanged();
                 AddPropertyCommand.NotifyCanExecuteChanged();
@@ -351,27 +362,27 @@ namespace XmlGeneratorNew.ViewModels
                     if (group.Properties.Contains(target))
                     {
                         removed = group.RemoveChild(target);
-                        return group; //  Возвращаем   родителя  (GroupItem)
+                        return group; //   Возвращаем   родителя   (GroupItem)
                     }
                     var foundParent = FindPropertyInGroupAndRemove(target, group);
                     if (foundParent != null)
                     {
-                        return foundParent; //  Родитель   уже   определен   внутри   рекурсии
+                        return foundParent; //   Родитель   уже   определен   внутри   рекурсии
                     }
                 }
             }
-            //  Поиск   в   корневых   группах
+            //   Поиск   в   корневых   группах
             foreach (var group in RootItems.OfType<GroupItem>())
             {
                 if (group.Properties.Contains(target))
                 {
                     removed = group.RemoveChild(target);
-                    return group; //  Возвращаем   родителя  (GroupItem)
+                    return group; //   Возвращаем   родителя   (GroupItem)
                 }
                 var foundParent = FindPropertyInGroupAndRemove(target, group);
                 if (foundParent != null)
                 {
-                    return foundParent; //  Родитель   уже   определен   внутри   рекурсии
+                    return foundParent; //   Родитель   уже   определен   внутри   рекурсии
                 }
             }
             // Поиск в секциях (свойства напрямую в секциях)
@@ -380,14 +391,14 @@ namespace XmlGeneratorNew.ViewModels
                 if (section.Properties.Contains(target))
                 {
                     removed = section.RemoveProperty(target);
-                    return section; //  Возвращаем   родителя  (SectionItem)
+                    return section; //   Возвращаем   родителя   (SectionItem)
                 }
             }
-            //  Поиск   в   корне
+            //   Поиск   в   корне
             if (RootItems.Contains(target))
             {
                 removed = RootItems.Remove(target);
-                return null; //  Родитель   корневого   элемента  -  это   сам  RootItems
+                return null; //   Родитель   корневого   элемента   -   это   сам   RootItems
             }
             return null;
         }
@@ -416,27 +427,27 @@ namespace XmlGeneratorNew.ViewModels
                     if (group.Properties.Contains(target))
                     {
                         removed = group.RemoveChild(target);
-                        return group; //  Возвращаем   родителя  (GroupItem)
+                        return group; //   Возвращаем   родителя   (GroupItem)
                     }
                     var foundParent = FindPropertyInGroupAndRemove(target, group);
                     if (foundParent != null)
                     {
-                        return foundParent; //  Родитель   уже   определен   внутри   рекурсии
+                        return foundParent; //   Родитель   уже   определен   внутри   рекурсии
                     }
                 }
             }
-            //  Поиск   в   корневых   группах
+            //   Поиск   в   корневых   группах
             foreach (var group in RootItems.OfType<GroupItem>())
             {
                 if (group.Properties.Contains(target))
                 {
                     removed = group.RemoveChild(target);
-                    return group; //  Возвращаем   родителя  (GroupItem)
+                    return group; //   Возвращаем   родителя   (GroupItem)
                 }
                 var foundParent = FindPropertyInGroupAndRemove(target, group);
                 if (foundParent != null)
                 {
-                    return foundParent; //  Родитель   уже   определен   внутри   рекурсии
+                    return foundParent; //   Родитель   уже   определен   внутри   рекурсии
                 }
             }
             // Поиск в секциях (свойства напрямую в секциях)
@@ -445,14 +456,14 @@ namespace XmlGeneratorNew.ViewModels
                 if (section.Properties.Contains(target))
                 {
                     removed = section.RemoveProperty(target);
-                    return section; //  Возвращаем   родителя  (SectionItem)
+                    return section; //   Возвращаем   родителя   (SectionItem)
                 }
             }
-            //  Поиск   в   корне
+            //   Поиск   в   корне
             if (RootItems.Contains(target))
             {
                 removed = RootItems.Remove(target);
-                return null; //  Родитель   корневого   элемента  -  это   сам  RootItems
+                return null; //   Родитель   корневого   элемента   -   это   сам   RootItems
             }
             return null;
         }
@@ -465,7 +476,7 @@ namespace XmlGeneratorNew.ViewModels
                 if (subGroup.Properties.Contains(target))
                 {
                     subGroup.RemoveChild(target);
-                    return subGroup; //  Возвращаем   родителя
+                    return subGroup; //   Возвращаем   родителя
                 }
                 var found = FindPropertyInGroupAndRemove(target, subGroup);
                 if (found != null)
@@ -477,32 +488,32 @@ namespace XmlGeneratorNew.ViewModels
         private object? FindParentOfGroupAndRemove(GroupItem target, out bool removed)
         {
             removed = false;
-            //  Поиск   в   секциях
+            //   Поиск   в   секциях
             foreach (var section in RootItems.OfType<SectionItem>())
             {
                 if (section.Groups.Contains(target))
                 {
                     removed = section.RemoveGroup(target);
-                    return section; //  Возвращаем   родителя  (SectionItem)
+                    return section; //   Возвращаем   родителя   (SectionItem)
                 }
                 var foundParent = FindGroupInGroupsAndRemove(target, section.Groups);
                 if (foundParent != null)
                 {
-                    return foundParent; //  Родитель   уже   определен   внутри   рекурсии
+                    return foundParent; //   Родитель   уже   определен   внутри   рекурсии
                 }
             }
-            //  Поиск   в   группах
+            //   Поиск   в   группах
             foreach (var group in RootItems.OfType<GroupItem>())
             {
                 if (group.Groups.Contains(target))
                 {
                     removed = group.RemoveChild(target);
-                    return group; //  Возвращаем   родителя  (GroupItem)
+                    return group; //   Возвращаем   родителя   (GroupItem)
                 }
                 var foundParent = FindGroupInGroupsAndRemove(target, group.Groups);
                 if (foundParent != null)
                 {
-                    return foundParent; //  Родитель   уже   определен   внутри   рекурсии
+                    return foundParent; //   Родитель   уже   определен   внутри   рекурсии
                 }
             }
             return null;
@@ -512,32 +523,32 @@ namespace XmlGeneratorNew.ViewModels
         private object? FindAndRemoveGroup(GroupItem target, out bool removed)
         {
             removed = false;
-            //  Поиск   в   секциях
+            //   Поиск   в   секциях
             foreach (var section in RootItems.OfType<SectionItem>())
             {
                 if (section.Groups.Contains(target))
                 {
                     removed = section.RemoveGroup(target);
-                    return section; //  Возвращаем   родителя  (SectionItem)
+                    return section; //   Возвращаем   родителя   (SectionItem)
                 }
                 var foundParent = FindGroupInGroupsAndRemove(target, section.Groups);
                 if (foundParent != null)
                 {
-                    return foundParent; //  Родитель   уже   определен   внутри   рекурсии
+                    return foundParent; //   Родитель   уже   определен   внутри   рекурсии
                 }
             }
-            //  Поиск   в   группах
+            //   Поиск   в   группах
             foreach (var group in RootItems.OfType<GroupItem>())
             {
                 if (group.Groups.Contains(target))
                 {
                     removed = group.RemoveChild(target);
-                    return group; //  Возвращаем   родителя  (GroupItem)
+                    return group; //   Возвращаем   родителя   (GroupItem)
                 }
                 var foundParent = FindGroupInGroupsAndRemove(target, group.Groups);
                 if (foundParent != null)
                 {
-                    return foundParent; //  Родитель   уже   определен   внутри   рекурсии
+                    return foundParent; //   Родитель   уже   определен   внутри   рекурсии
                 }
             }
             return null;
@@ -551,7 +562,7 @@ namespace XmlGeneratorNew.ViewModels
                 if (group.Groups.Contains(target))
                 {
                     group.RemoveChild(target);
-                    return group; //  Возвращаем   родителя
+                    return group; //   Возвращаем   родителя
                 }
                 var found = FindGroupInGroupsAndRemove(target, group.Groups);
                 if (found != null)
@@ -629,8 +640,11 @@ namespace XmlGeneratorNew.ViewModels
             if (result == MessageBoxResult.Yes)
             {
                 RootItems.Clear();
+                FooterItems.Clear(); // Очищаем футер тоже
                 SelectedItem = null;
                 DeleteCommand.NotifyCanExecuteChanged();
+                // Инициализируем футер заново
+                UpdateFooterItemsFromSettings();
             }
         }
 
@@ -645,13 +659,27 @@ namespace XmlGeneratorNew.ViewModels
                     propertyIndex = 1;
                     var loadedItems = LoadXmlToModel(openFileDialog.FileName);
                     RootItems.Clear();
+                    FooterItems.Clear(); // Очищаем футер при загрузке
                     foreach (var item in loadedItems)
-                        RootItems.Add(item);
-                    MessageBox.Show("XML шаблон успешно загружен.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    {
+                        // Проверяем, является ли элемент строкой-футером
+                        if (item is string strItem && IsFooterString(strItem))
+                        {
+                            FooterItems.Add(strItem); // Добавляем в футер
+                        }
+                        else
+                        {
+                            RootItems.Add(item); // Добавляем в основное дерево
+                        }
+                    }
+                    // Убедимся, что все выбранные элементы в настройках присутствуют в футере
+                    UpdateFooterItemsFromSettings(); // Это добавит недостающие, если они есть в настройках
+
+                    MessageBox.Show("XML шаблон успешно загружен .", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (System.Exception ex)
                 {
-                    MessageBox.Show($"Ошибка при загрузке XML: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($" Ошибка при загрузке XML: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -677,6 +705,25 @@ namespace XmlGeneratorNew.ViewModels
                     case "property":
                         rootItems.Add(ParseProperty(element));
                         break;
+                    // Обрабатываем строки-футеры
+                    case "consultantDefaultConclusion":
+                    case "instrumentalProbeConclusion":
+                    case "labProbeConclusion":
+                    case "probeGenericResultSelection":
+                        rootItems.Add("Заключение"); // Добавляем как строку
+                        break;
+                    case "diagnosisSelection":
+                        rootItems.Add("Диагнозы");
+                        break;
+                    case "assignmentsView":
+                        rootItems.Add("Назначения");
+                        break;
+                    case "treatmentActions":
+                        rootItems.Add("Лечебные действия");
+                        break;
+                    case "attachments":
+                        rootItems.Add("Вложения");
+                        break;
                 }
             }
             return rootItems;
@@ -696,7 +743,7 @@ namespace XmlGeneratorNew.ViewModels
                 var group = ParseGroup(groupElem);
                 section.AddGroup(group);
             }
-            //  Добавляем   поддержку   свойств   в   секции
+            //   Добавляем   поддержку   свойств   в   секции
             foreach (var propElem in element.Elements("property"))
             {
                 var prop = ParseProperty(propElem);
@@ -711,7 +758,7 @@ namespace XmlGeneratorNew.ViewModels
             string nameAttr = (string?)element.Attribute("name") ?? "";
             var group = new GroupItem
             {
-                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $" Группа _{groupIndex++}"),
+                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Группа_{groupIndex++}"),
                 Caption = caption,
                 OdCaption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 Layout = (string?)element.Attribute(XName.Get("layout", "http://www.sanatorium-is.ru/editor")) ?? "DockPanel",
@@ -723,7 +770,7 @@ namespace XmlGeneratorNew.ViewModels
                 ECaptionStyle = (string?)element.Attribute(XName.Get("captionStyle", "http://www.sanatorium-is.ru/editor")) ?? "",
                 OdGroupStyle = (string?)element.Attribute(XName.Get("groupStyle", "http://www.sanatorium-is.ru/officeDocument")) ?? ""
             };
-            //  Добавляем   проверку   для   новых   свойств
+            //   Добавляем   проверку   для   новых   свойств
             group.OdGroupModeIsParagraph = !string.IsNullOrEmpty((string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument"))) &&
                                            ((string?)element.Attribute(XName.Get("groupMode", "http://www.sanatorium-is.ru/officeDocument")) == "paragraph");
             group.ECaptionStyleIsGroupHeader = !string.IsNullOrEmpty((string?)element.Attribute(XName.Get("captionStyle", "http://www.sanatorium-is.ru/editor"))) &&
@@ -753,7 +800,7 @@ namespace XmlGeneratorNew.ViewModels
             string nameAttr = (string?)element.Attribute("name") ?? "";
             var prop = new PropertyItem
             {
-                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $" Свойство _{propertyIndex++}"),
+                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Свойство_{propertyIndex++}"),
                 Caption = caption,
                 OdCaption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 Separator = (string?)element.Attribute(XName.Get("separator", "http://www.sanatorium-is.ru/editor")) ?? "",
@@ -807,7 +854,6 @@ namespace XmlGeneratorNew.ViewModels
                     }
                     if (!string.IsNullOrWhiteSpace(templateName))
                         writer.WriteAttributeString("name", templateName);
-
                     // Записываем элементы в том порядке, в котором они находятся в RootItems
                     foreach (var item in RootItems)
                     {
@@ -822,60 +868,82 @@ namespace XmlGeneratorNew.ViewModels
                             case PropertyItem prop:
                                 WriteProperty(writer, prop);
                                 break;
-                            // Записываем типы как строки
-                            case string str when IsTypeString(str):
+                            //  Записываем   типы   как   строки (если они попали сюда)
+                            case string str when IsFooterString(str):
                                 // Обрабатываем строки-типы
-                                WriteType(writer, str);
+                                WriteFooterItem(writer, str);
                                 break;
-                            // Записываем блоки как строки
-                            case string str when IsBlockString(str):
+                            //  Записываем   блоки   как   строки (если они попали сюда)
+                            case string str when IsFooterString(str):
                                 // Обрабатываем строки-блоки
-                                WriteBlock(writer, str);
+                                WriteFooterItem(writer, str);
                                 break;
                         }
                     }
-
+                    // Записываем элементы футера в том порядке, в котором они находятся в FooterItems
+                    foreach (var footerItem in FooterItems)
+                    {
+                        WriteFooterItem(writer, footerItem);
+                    }
                     writer.WriteEndElement();
                     writer.WriteEndDocument();
                     MessageBox.Show($"XML успешно сохранён в:\n{currentSavePath}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (System.Exception ex)
                 {
-                    MessageBox.Show($" Ошибка при сохранении XML:\n{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Ошибка при сохранении XML:\n{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
 
-        // --- Добавлен метод для записи типов ---
-        private void WriteType(XmlWriter writer, string typeName)
+        // --- Добавлен метод для записи элементов футера ---
+        private void WriteFooterItem(XmlWriter writer, string itemName)
         {
-            if (typeName == "Заключение")
+            switch (itemName)
             {
-                // Записываем первый подходящий тип
-                if (_typeSettings.IsConsultation)
-                {
-                    writer.WriteStartElement("e", "consultantDefaultConclusion", "http://www.sanatorium-is.ru/editor");
-                    writer.WriteAttributeString("autoSuggestName", "specC");
+                case "Заключение":
+                    // Записываем первый подходящий тип
+                    if (_typeSettings.IsConsultation)
+                    {
+                        writer.WriteStartElement("e", "consultantDefaultConclusion", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteAttributeString("autoSuggestName", "specC");
+                        writer.WriteEndElement();
+                    }
+                    else if (_typeSettings.IsInstrumental)
+                    {
+                        writer.WriteStartElement("e", "instrumentalProbeConclusion", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteAttributeString("noPathologyCounter", "True");
+                        writer.WriteAttributeString("autoSuggestName", "ИИ. заключение");
+                        writer.WriteStartElement("e", "recommendations", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteAttributeString("autoSuggestName", "ИИ. рекомендации");
+                        writer.WriteEndElement();
+                        writer.WriteEndElement(); // instrumentalProbeConclusion
+                    }
+                    else if (_typeSettings.IsLaboratory)
+                    {
+                        writer.WriteStartElement("e", "probeGenericResultSelection", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteEndElement();
+                        writer.WriteStartElement("e", "labProbeConclusion", "http://www.sanatorium-is.ru/editor");
+                        writer.WriteAttributeString("autoSuggestName", "labProbeC");
+                        writer.WriteEndElement();
+                    }
+                    break;
+                case "Диагнозы":
+                    writer.WriteStartElement("e", "diagnosisSelection", "http://www.sanatorium-is.ru/editor");
                     writer.WriteEndElement();
-                }
-                else if (_typeSettings.IsInstrumental)
-                {
-                    writer.WriteStartElement("e", "instrumentalProbeConclusion", "http://www.sanatorium-is.ru/editor");
-                    writer.WriteAttributeString("noPathologyCounter", "True");
-                    writer.WriteAttributeString("autoSuggestName", " ИИ . заключение ");
-                    writer.WriteStartElement("e", "recommendations", "http://www.sanatorium-is.ru/editor");
-                    writer.WriteAttributeString("autoSuggestName", " ИИ . рекомендации ");
+                    break;
+                case "Назначения":
+                    writer.WriteStartElement("e", "assignmentsView", "http://www.sanatorium-is.ru/editor");
                     writer.WriteEndElement();
-                    writer.WriteEndElement(); // instrumentalProbeConclusion
-                }
-                else if (_typeSettings.IsLaboratory)
-                {
-                    writer.WriteStartElement("e", "probeGenericResultSelection", "http://www.sanatorium-is.ru/editor");
+                    break;
+                case "Лечебные действия":
+                    writer.WriteStartElement("e", "treatmentActions", "http://www.sanatorium-is.ru/editor");
                     writer.WriteEndElement();
-                    writer.WriteStartElement("e", "labProbeConclusion", "http://www.sanatorium-is.ru/editor");
-                    writer.WriteAttributeString("autoSuggestName", "labProbeC");
+                    break;
+                case "Вложения":
+                    writer.WriteStartElement("e", "attachments", "http://www.sanatorium-is.ru/editor");
                     writer.WriteEndElement();
-                }
+                    break;
             }
         }
 
@@ -902,7 +970,7 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("e", "captionStyle", null, "GroupHeader");
             if (group.OdGroupStyleIsNewParagraphBoldHeader)
                 writer.WriteAttributeString("od", "groupStyle", null, "NewParagraphBoldHeader");
-            //  Добавлено :  запись   атрибута  semd
+            //   Добавлено  :   запись   атрибута   semd
             if (!string.IsNullOrEmpty(group.Semd))
                 writer.WriteAttributeString("semd", null, group.Semd);
             foreach (var prop in group.Properties)
@@ -961,30 +1029,6 @@ namespace XmlGeneratorNew.ViewModels
             foreach (var prop in section.Properties)
                 WriteProperty(writer, prop);
             writer.WriteEndElement();
-        }
-
-        // --- Добавлен метод для записи блоков ---
-        private void WriteBlock(XmlWriter writer, string blockName)
-        {
-            switch (blockName)
-            {
-                case "Диагнозы":
-                    writer.WriteStartElement("e", "diagnosisSelection", "http://www.sanatorium-is.ru/editor");
-                    writer.WriteEndElement();
-                    break;
-                case "Назначения":
-                    writer.WriteStartElement("e", "assignmentsView", "http://www.sanatorium-is.ru/editor");
-                    writer.WriteEndElement();
-                    break;
-                case "Лечебные действия":
-                    writer.WriteStartElement("e", "treatmentActions", "http://www.sanatorium-is.ru/editor");
-                    writer.WriteEndElement();
-                    break;
-                case "Вложения":
-                    writer.WriteStartElement("e", "attachments", "http://www.sanatorium-is.ru/editor");
-                    writer.WriteEndElement();
-                    break;
-            }
         }
 
         private void OpenNamespaceSettings()
@@ -1119,123 +1163,77 @@ namespace XmlGeneratorNew.ViewModels
             return null;
         }
 
+        // --- Проверка на строки футера ---
+        private bool IsFooterString(string str)
+        {
+            return str == "Диагнозы" || str == "Назначения" || str == "Лечебные действия" || str == "Вложения" || str == "Заключение";
+        }
+
         public void HandleDrop(object draggedItem, object? targetItem)
         {
             if (draggedItem == null || draggedItem == targetItem)
                 return;
 
-            // --- Проверка на типы (строки) ---
-            bool isDraggedType = draggedItem is string draggedStringType && IsTypeString(draggedStringType);
-            bool isTargetType = targetItem is string targetStringType && IsTypeString(targetStringType);
+            // --- Проверка на строки футера ---
+            bool isDraggedFooter = draggedItem is string draggedStringFooter && IsFooterString(draggedStringFooter);
+            bool isTargetFooter = targetItem is string targetStringFooter && IsFooterString(targetStringFooter);
 
-            // Проверяем, является ли draggedItem типом и пытаемся переместить его в корень
-            if (isDraggedType)
+            // --- Обработка перемещения элементов футера ---
+            if (isDraggedFooter)
             {
-                // Если draggedItem - тип, то мы хотим переместить его в корень
-                // Или переместить его после другого типа
+                // Удаляем из текущего места (может быть в FooterItems или в RootItems)
+                RemoveItem(draggedItem);
+
                 if (targetItem == null)
                 {
-                    // Перемещение типа в конец корня
-                    // Сначала удаляем из текущего положения
-                    RemoveItem(draggedItem);
-                    RootItems.Add(draggedItem);
+                    // Перемещение футера в конец списка футеров
+                    FooterItems.Add((string)draggedItem);
                     SelectedItem = draggedItem;
                     return;
                 }
-                else if (isTargetType)
+                else if (isTargetFooter)
                 {
-                    // Перемещение типа после другого типа
-                    RemoveItem(draggedItem);
-                    int targetIndex = RootItems.IndexOf(targetItem);
+                    // Перемещение футера после другого футера
+                    int targetIndex = FooterItems.IndexOf((string)targetItem);
                     if (targetIndex >= 0)
                     {
-                        RootItems.Insert(targetIndex + 1, draggedItem);
+                        FooterItems.Insert(targetIndex + 1, (string)draggedItem);
                         SelectedItem = draggedItem;
                     }
                     else
                     {
-                        // Если targetItem не найден в RootItems, добавляем в конец
-                        RootItems.Add(draggedItem);
+                        // Если targetItem не найден в FooterItems, добавляем в конец
+                        FooterItems.Add((string)draggedItem);
                         SelectedItem = draggedItem;
                     }
                     return;
                 }
                 else
                 {
-                    // Перемещение типа в корень
-                    RemoveItem(draggedItem);
-                    RootItems.Add(draggedItem);
+                    // Перемещение футера в список футеров (при дропе на основной элемент)
+                    FooterItems.Add((string)draggedItem);
                     SelectedItem = draggedItem;
                     return;
                 }
             }
 
-            // --- Проверка на блоки (строки) ---
-            bool isDraggedBlock = draggedItem is string draggedStringBlock && IsBlockString(draggedStringBlock);
-            bool isTargetBlock = targetItem is string targetStringBlock && IsBlockString(targetStringBlock);
-
-            // Проверяем, является ли draggedItem блоком и пытаемся переместить его в корень
-            if (isDraggedBlock)
-            {
-                // Если draggedItem - блок, то мы хотим переместить его в корень
-                // Или переместить его после другого блока
-                if (targetItem == null)
-                {
-                    // Перемещение блока в конец корня
-                    // Сначала удаляем из текущего положения
-                    RemoveItem(draggedItem);
-                    RootItems.Add(draggedItem);
-                    SelectedItem = draggedItem;
-                    return;
-                }
-                else if (isTargetBlock)
-                {
-                    // Перемещение блока после другого блока
-                    RemoveItem(draggedItem);
-                    int targetIndex = RootItems.IndexOf(targetItem);
-                    if (targetIndex >= 0)
-                    {
-                        RootItems.Insert(targetIndex + 1, draggedItem);
-                        SelectedItem = draggedItem;
-                    }
-                    else
-                    {
-                        // Если targetItem не найден в RootItems, добавляем в конец
-                        RootItems.Add(draggedItem);
-                        SelectedItem = draggedItem;
-                    }
-                    return;
-                }
-                else
-                {
-                    // Перемещение блока в корень
-                    RemoveItem(draggedItem);
-                    RootItems.Add(draggedItem);
-                    SelectedItem = draggedItem;
-                    return;
-                }
-            }
-
-            // --- Обработка обычных элементов модели ---
+            // --- Обработка перемещения основных элементов ---
             // Запретить вложение секции в секцию
             if (draggedItem is SectionItem && targetItem is SectionItem)
             {
                 // Игнорируем или можно просто не менять вложенность
                 return;
             }
-
             // Удаляем draggedItem из текущего места
             RemoveItem(draggedItem);
-
             if (targetItem == null)
             {
-                // Перемещение в корень
+                //  Перемещение   в   корень
                 RootItems.Add(draggedItem);
                 SelectedItem = draggedItem;
                 return;
             }
-
-            // Остальная логика вложения
+            //  Остальная   логика   вложения
             switch (targetItem)
             {
                 case SectionItem section:
@@ -1260,24 +1258,17 @@ namespace XmlGeneratorNew.ViewModels
             SelectedItem = draggedItem;
         }
 
-        // --- Вспомогательный метод ---
-        private bool IsBlockString(string str)
-        {
-            return str == "Диагнозы" || str == "Назначения" || str == "Лечебные действия" || str == "Вложения";
-        }
-
-        // --- Вспомогательный метод для типов ---
-        private bool IsTypeString(string str)
-        {
-            return str == "Заключение";
-        }
-
-        // --- Убедитесь, что RemoveItem корректно обрабатывает строки ---
+        // --- Убедитесь, что RemoveItem корректно обрабатывает строки футера ---
         private void RemoveItem(object item)
         {
             if (RootItems.Contains(item))
             {
                 RootItems.Remove(item);
+                return;
+            }
+            if (FooterItems.Contains((string)item)) // Проверка для строк футера
+            {
+                FooterItems.Remove((string)item);
                 return;
             }
             if (item is PropertyItem prop)
@@ -1300,19 +1291,19 @@ namespace XmlGeneratorNew.ViewModels
             {
                 RootItems.Remove(section);
             }
-            else if (item is string blockString && IsBlockString(blockString))
+            else if (item is string blockString && IsFooterString(blockString))
             {
-                // Удаляем строку блока
-                RootItems.Remove(blockString);
+                //  Удаляем   строку   блока
+                FooterItems.Remove(blockString); // Удаляем из FooterItems
             }
-            else if (item is string typeString && IsTypeString(typeString))
+            else if (item is string typeString && IsFooterString(typeString))
             {
-                // Удаляем строку типа
-                RootItems.Remove(typeString);
+                //  Удаляем   строку   типа
+                FooterItems.Remove(typeString); // Удаляем из FooterItems
             }
         }
 
-        // --- Убедитесь, что InsertAfter корректно обрабатывает строки ---
+        // --- Убедитесь, что InsertAfter корректно обрабатывает строки футера ---
         private void InsertAfter(object? parent, object reference, object newItem)
         {
             if (parent == null)
@@ -1320,6 +1311,10 @@ namespace XmlGeneratorNew.ViewModels
                 int index = RootItems.IndexOf(reference);
                 if (index >= 0)
                     RootItems.Insert(index + 1, newItem);
+                // Также проверяем, если newItem строка футера и reference тоже строка футера
+                // Но в этом случае parent == null, значит newItem должен быть в RootItems или FooterItems
+                // Лучше оставить логику как есть, т.к. HandleDrop уже обрабатывает футеры отдельно
+                return; // Возврат, чтобы не выполнять дальнейшие проверки
             }
             else if (parent is SectionItem section)
             {
@@ -1355,13 +1350,15 @@ namespace XmlGeneratorNew.ViewModels
                     return;
                 }
             }
+            // Если newItem строка футера, и он был перемещен в основное дерево, нужно переместить его обратно в FooterItems
+            // Но HandleDrop уже должен был это обработать
         }
 
         public void MoveItemToRoot(object draggedItem)
         {
             if (draggedItem == null)
                 return;
-            //  Удаляем   из   текущего   места
+            //   Удаляем   из   текущего   места
             RemoveItem(draggedItem);
             // Добавляем в корень последний элемент
             RootItems.Add(draggedItem);

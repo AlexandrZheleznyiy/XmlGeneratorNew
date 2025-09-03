@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using XmlGeneratorNew.ViewModels;
+using System;
 
 namespace XmlGeneratorNew.Views
 {
@@ -24,6 +25,7 @@ namespace XmlGeneratorNew.Views
                 vm.SelectedItem = e.NewValue;
             }
         }
+
         private void TreeView_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Delete && DataContext is MainViewModel vm)
@@ -32,7 +34,7 @@ namespace XmlGeneratorNew.Views
                 {
                     vm.DeleteCommand.Execute(null);
                 }
-                e.Handled = true; // Подавляем дальнейшее распространение события
+                e.Handled = true;  //  Подавляем   дальнейшее   распространение   события
             }
         }
 
@@ -40,6 +42,7 @@ namespace XmlGeneratorNew.Views
         {
             e.Handled = true;
         }
+
         private void TreeView_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             _dragStartPoint = e.GetPosition(null);
@@ -49,7 +52,6 @@ namespace XmlGeneratorNew.Views
         {
             Point mousePos = e.GetPosition(null);
             Vector diff = _dragStartPoint - mousePos;
-
             if (e.LeftButton == MouseButtonState.Pressed &&
                 (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
                 Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance))
@@ -65,7 +67,7 @@ namespace XmlGeneratorNew.Views
                 if (draggedItem == null)
                     return;
 
-                // Инициируем DragDrop операцию и передаём перетаскиваемый объект
+                //  Инициируем  DragDrop  операцию   и   передаём   перетаскиваемый   объект
                 DataObject dragData = new DataObject("myFormat", draggedItem);
                 DragDrop.DoDragDrop(treeViewItem, dragData, DragDropEffects.Move);
             }
@@ -79,7 +81,6 @@ namespace XmlGeneratorNew.Views
                 e.Handled = true;
                 return;
             }
-
             object? targetData = GetDataContextTreeViewItem(e);
             e.Effects = DragDropEffects.Move;
             e.Handled = true;
@@ -88,38 +89,63 @@ namespace XmlGeneratorNew.Views
         private void TreeView_Drop(object sender, DragEventArgs e)
         {
             if (!e.Data.GetDataPresent("myFormat")) return;
-
             object? draggedData = e.Data.GetData("myFormat");
             object? targetData = GetDataContextTreeViewItem(e);
-
             if (draggedData == null) return;
-
             if (DataContext is MainViewModel vm)
             {
                 vm.HandleDrop(draggedData, targetData);
             }
-
             e.Handled = true;
         }
+
         private object? GetDataContextTreeViewItem(DragEventArgs e)
         {
             Point position = e.GetPosition(treeView);
             HitTestResult hit = VisualTreeHelper.HitTest(treeView, position);
             if (hit == null) return null;
-
             DependencyObject? current = hit.VisualHit;
             while (current != null && !(current is TreeViewItem))
             {
                 current = VisualTreeHelper.GetParent(current);
             }
-
             if (current is TreeViewItem tvi)
             {
                 return tvi.DataContext;
             }
             return null;
         }
-        private void MainTreeView_DragOver(object sender, DragEventArgs e)
+
+        // --- Обработчики для FooterListBox ---
+        private void FooterListBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _dragStartPoint = e.GetPosition(null);
+        }
+
+        private void FooterListBox_MouseMove(object sender, MouseEventArgs e)
+        {
+            Point mousePos = e.GetPosition(null);
+            Vector diff = _dragStartPoint - mousePos;
+            if (e.LeftButton == MouseButtonState.Pressed &&
+                (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                 Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance))
+            {
+                ListBox listBox = sender as ListBox;
+                ListBoxItem listBoxItem = FindAncestor<ListBoxItem>((DependencyObject)e.OriginalSource);
+
+                if (listBoxItem == null)
+                    return;
+
+                object draggedItem = listBoxItem.DataContext;
+                if (draggedItem == null)
+                    return;
+
+                DataObject dragData = new DataObject("myFormat", draggedItem);
+                DragDrop.DoDragDrop(listBoxItem, dragData, DragDropEffects.Move);
+            }
+        }
+
+        private void FooterListBox_DragOver(object sender, DragEventArgs e)
         {
             if (!e.Data.GetDataPresent("myFormat"))
             {
@@ -127,85 +153,40 @@ namespace XmlGeneratorNew.Views
                 e.Handled = true;
                 return;
             }
-
-            object? targetItem = GetDropTargetDataContext(e);
-
-            // Можно добавить логику для определения, можно ли в targetItem переместить draggedItem
             e.Effects = DragDropEffects.Move;
-
             e.Handled = true;
         }
-        private void MainTreeView_Drop(object sender, DragEventArgs e)
+
+        private void FooterListBox_Drop(object sender, DragEventArgs e)
         {
             if (!e.Data.GetDataPresent("myFormat")) return;
-
             object draggedItem = e.Data.GetData("myFormat");
             if (draggedItem == null) return;
 
-            object? targetItem = GetDropTargetDataContext(e);
+            // Определяем, куда был сброшен элемент
+            // Пытаемся получить ListBoxItem под курсором
+            var pos = e.GetPosition(FooterListBox);
+            var result = VisualTreeHelper.HitTest(FooterListBox, pos);
+            object? targetItem = null;
+            if (result != null)
+            {
+                DependencyObject current = result.VisualHit;
+                while (current != null && !(current is ListBoxItem))
+                {
+                    current = VisualTreeHelper.GetParent(current);
+                }
+                if (current is ListBoxItem lbi)
+                {
+                    targetItem = lbi.DataContext;
+                }
+            }
 
             if (DataContext is MainViewModel vm)
             {
-                if (targetItem == null)
-                {
-                    // Дроп в корень — перемещаем в RootItems
-                    vm.HandleDrop(draggedItem, null);
-                }
-                else
-                {
-                    // Дроп на обычный элемент
-                    vm.HandleDrop(draggedItem, targetItem);
-                }
+                // Передаем null как targetItem, если дроп на пустое место футера
+                // HandleDrop должен обработать это правильно
+                vm.HandleDrop(draggedItem, targetItem);
             }
-
-            e.Handled = true;
-        }
-        private object? GetDropTargetDataContext(DragEventArgs e)
-        {
-            var pos = e.GetPosition(MainTreeView);  // заменить TreeViewControl на имя вашего TreeView
-            var result = VisualTreeHelper.HitTest(MainTreeView, pos);
-
-            if (result == null)
-                return null;
-
-            DependencyObject current = result.VisualHit;
-            while (current != null && !(current is TreeViewItem))
-            {
-                current = VisualTreeHelper.GetParent(current);
-            }
-
-            if (current is TreeViewItem tvi)
-            {
-                return tvi.DataContext;
-            }
-
-            // Возвращаем null, если дроп на пустом месте
-            return null;
-        }
-        private void TreeViewControl_Drop(object sender, DragEventArgs e)
-        {
-            if (!e.Data.GetDataPresent(typeof(object))) // или ваш формат
-                return;
-
-            var draggedItem = e.Data.GetData(typeof(object));
-            if (draggedItem == null) return;
-
-            var targetItem = GetDropTargetDataContext(e);
-
-            if (DataContext is MainViewModel vm)
-            {
-                if (targetItem == null)
-                {
-                    // Дроп на пустое место — добавляем в корень
-                    vm.MoveItemToRoot(draggedItem);
-                }
-                else
-                {
-                    // Дроп на элемент — нормальная логика с вложением
-                    vm.HandleDrop(draggedItem, targetItem);
-                }
-            }
-
             e.Handled = true;
         }
 
