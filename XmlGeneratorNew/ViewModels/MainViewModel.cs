@@ -1076,15 +1076,14 @@ namespace XmlGeneratorNew.ViewModels
             if (draggedItem == null || draggedItem == targetItem)
                 return;
 
-            // --- Проверка на строки футера ---
+            // Проверяем, является ли draggedItem строкой футера
             bool isDraggedFooter = draggedItem is string draggedStringFooter && IsFooterString(draggedStringFooter);
             bool isTargetFooter = targetItem is string targetStringFooter && IsFooterString(targetStringFooter);
 
             // --- Обработка перемещения элементов футера ---
             if (isDraggedFooter)
             {
-                // Удаляем из текущего места (может быть в FooterItems или в RootItems)
-                RemoveItem(draggedItem);
+                RemoveItem(draggedItem); // Удаляем из текущего места
 
                 if (targetItem == null)
                 {
@@ -1119,57 +1118,89 @@ namespace XmlGeneratorNew.ViewModels
                 }
             }
 
-
-
             // --- Обработка перемещения основных элементов ---
-            // Запретить вложение секции в секцию
-            // --- НОВАЯ ЛОГИКА: Запретить вложение группы в саму себя или её потомков ---
+
+            // Если оба элемента - секции, меняем их местами в RootItems
+            if (draggedItem is SectionItem && targetItem is SectionItem)
+            {
+                // Находим индексы обеих секций
+                int draggedIndex = RootItems.IndexOf(draggedItem);
+                int targetIndex = RootItems.IndexOf(targetItem);
+
+                if (draggedIndex >= 0 && targetIndex >= 0)
+                {
+                    // Меняем местами в коллекции
+                    RootItems.Move(draggedIndex, targetIndex);
+                    SelectedItem = draggedItem;
+                }
+                return;
+            }
+
+            // Запретить вложение группы в саму себя или её потомков
             if (draggedItem is GroupItem draggedGroup && targetItem is GroupItem targetGroup)
             {
-                // Проверяем, является ли targetGroup потомком draggedGroup
                 if (IsDescendantOf(targetGroup, draggedGroup))
                 {
                     // Попытка вложить группу в себя или своего потомка - запрещаем
                     System.Diagnostics.Debug.WriteLine($"[VM] Drop rejected: Cannot drop group '{draggedGroup.Name}' into itself or its descendant '{targetGroup.Name}'.");
-                    // Ничего не делаем, просто выходим
                     return;
                 }
-                // Если проверка пройдена, логика добавления группы в группу остается стандартной
-                // (ниже в оригинальном коде HandleDrop)
             }
-
 
             // Удаляем draggedItem из текущего места
             RemoveItem(draggedItem);
+
             if (targetItem == null)
             {
-                //  Перемещение   в   корень
+                // Перемещение в корень
                 RootItems.Add(draggedItem);
                 SelectedItem = draggedItem;
                 return;
             }
-            //  Остальная   логика   вложения
+
+            // Остальная логика вложения
             switch (targetItem)
             {
                 case SectionItem section:
-                    if (draggedItem is GroupItem g) section.AddGroup(g);
-                    else if (draggedItem is PropertyItem p) section.AddProperty(p);
-                    // Разрешаем перетаскивание секции в секцию (если это нужно)
-                    // Но если нужно запретить, то просто не делаем ничего
-                    // else if (draggedItem is SectionItem) { /* ignore */ }
+                    // Проверяем, что draggedItem не является секцией
+                    if (draggedItem is SectionItem)
+                    {
+                        // Запретить вложение секции в секцию - это уже обработано выше
+                        return;
+                    }
+                    else if (draggedItem is GroupItem g)
+                    {
+                        section.AddGroup(g);
+                    }
+                    else if (draggedItem is PropertyItem p)
+                    {
+                        section.AddProperty(p);
+                    }
                     break;
+
                 case GroupItem group:
-                    if (draggedItem is GroupItem gr) group.AddGroup(gr);
-                    else if (draggedItem is PropertyItem p) group.AddProperty(p);
+                    if (draggedItem is GroupItem gr)
+                    {
+                        group.AddGroup(gr);
+                    }
+                    else if (draggedItem is PropertyItem p)
+                    {
+                        group.AddProperty(p);
+                    }
                     break;
+
                 case PropertyItem _:
                     var parent = FindParent(targetItem);
                     InsertAfter(parent, targetItem, draggedItem);
                     break;
+
                 default:
+                    // Если targetItem не является ни секцией, ни группой, ни свойством,
+                    // добавляем в корень
                     RootItems.Add(draggedItem);
                     break;
             }
+
             SelectedItem = draggedItem;
         }
         private bool IsDescendantOf(object potentialDescendant, object potentialAncestor)
