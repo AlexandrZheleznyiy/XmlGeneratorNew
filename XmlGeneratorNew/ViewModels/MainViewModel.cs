@@ -1,16 +1,17 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Xml;
 using System.Xml.Linq;
 using XmlGeneratorNew.Models;
 using XmlGeneratorNew.Views;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.ComponentModel;
 
 namespace XmlGeneratorNew.ViewModels
 {
@@ -630,7 +631,8 @@ namespace XmlGeneratorNew.ViewModels
             string nameAttr = (string?)element.Attribute("name") ?? "";
             var group = new GroupItem
             {
-                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Группа_{groupIndex++}"),
+                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) 
+                ? string.Join(" ", Regex.Split(caption, @"[\s\(\)]+").Where(s => !string.IsNullOrEmpty(s)).Take(3)) : $"Группа_{groupIndex++}"),
                 Caption = caption,
                 OdCaption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 Layout = (string?)element.Attribute(XName.Get("layout", "http://www.sanatorium-is.ru/editor")) ?? "DockPanel",
@@ -675,7 +677,8 @@ namespace XmlGeneratorNew.ViewModels
             string nameAttr = (string?)element.Attribute("name") ?? "";
             var prop = new PropertyItem
             {
-                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) ? caption : $"Свойство_{propertyIndex++}"),
+                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr : (!string.IsNullOrEmpty(caption) 
+                ? string.Join(" ", Regex.Split(caption, @"[\s\(\)]+").Where(s => !string.IsNullOrEmpty(s)).Take(3)) : $"Свойство_{propertyIndex++}"),
                 Caption = caption,
                 OdCaption = (string?)element.Attribute(XName.Get("caption", "http://www.sanatorium-is.ru/officeDocument")) ?? "",
                 Separator = (string?)element.Attribute(XName.Get("separator", "http://www.sanatorium-is.ru/editor")) ?? "",

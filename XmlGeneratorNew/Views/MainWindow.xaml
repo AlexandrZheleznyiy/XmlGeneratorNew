@@ -6,7 +6,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="XmlGeneratorNew" Height="800" Width="1100"
+        Title="XmlGeneratorNew" Height="900" Width="1200"
         Background="#fafafa"
         FontFamily="Segoe UI, Segoe UI Symbol, Segoe WP"
         SnapsToDevicePixels="True"
@@ -35,7 +35,7 @@
                                     <!--  Вертикальная   линия  -->
                                     <Border Grid.Column="0"
                                             Width="1"
-                                            Margin="8,0,0,0"
+                                            Margin="0,0,0,0"
                                             VerticalAlignment="Stretch"
                                             Background="#E0E0E0"
                                             Visibility="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem}, 
@@ -44,12 +44,12 @@
                                     <Border x:Name="PART_HorizontalLine"
                                             Grid.Column="1"
                                             Height="1"
-                                            Width="10"
-                                            Margin="0,0,2,0"
+                                            Width="5"
+                                            Margin="0,0,0,0"
                                             Background="#9E9E9E"
                                             VerticalAlignment="Center"/>
                                     <!-- Expander -->
-                                    <Grid Grid.Column="2" Margin="2,0">
+                                    <Grid Grid.Column="2" Margin="0,0">
                                         <ToggleButton x:Name="Expander"
                                                       IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
                                                       ClickMode="Press"
@@ -130,10 +130,7 @@
             <!-- Для футера -->
             <RowDefinition Height="Auto"/>
             <!-- Для кнопок -->
-        </Grid.RowDefinitions>
-        <!--  Заголовок  -->
-        <TextBlock Grid.Row="0" Text="Генератор XML" FontSize="26" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,5" HorizontalAlignment="Center"/>
-        <!-- Кнопки: Пространство имён / Тип / Блоки -->
+        </Grid.RowDefinitions><!-- Кнопки: Пространство имён / Тип / Блоки -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,5">
             <Button Width="130" Height="20" Command="{Binding OpenNamespaceSettingsCommand}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -150,12 +147,12 @@
         <!-- Дерево и редактор -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="350"/>
-                <ColumnDefinition Width="15"/>
+                <ColumnDefinition Width="380"/>
+                <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <!--  Дерево  -->
-            <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="10" BorderBrush="#E0E0E0" BorderThickness="1">
+            <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="0" BorderBrush="#E0E0E0" BorderThickness="1">
                 <TreeView x:Name="MainTreeView" ItemsSource="{Binding RootItems}"
                           SelectedItemChanged="TreeView_SelectedItemChanged"
                           PreviewMouseLeftButtonDown="TreeView_PreviewMouseLeftButtonDown"
@@ -193,7 +190,7 @@
             </Border>
             <!--  Редактор  -->
             <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="15" BorderBrush="#E0E0E0" BorderThickness="1">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="10">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0">
                     <Grid>
                         <ContentControl Content="{Binding SelectedItem}">
                             <ContentControl.Resources>
