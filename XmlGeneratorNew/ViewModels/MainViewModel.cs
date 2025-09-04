@@ -1267,55 +1267,195 @@ namespace XmlGeneratorNew.ViewModels
             // Или добавить логирование для отладки: System.Diagnostics.Debug.WriteLine($"Item not found or unsupported type for removal: {item?.GetType().Name ?? "null"}");
         }
 
-        // --- Убедитесь, что InsertAfter корректно обрабатывает строки футера ---
         private void InsertAfter(object? parent, object reference, object newItem)
         {
+            // Если parent null, это означает вставку в RootItems.
+            // Однако в текущей логике HandleDrop, для корневого уровня используется MoveItemToRoot или прямая вставка в RootItems.
+            // Этот метод InsertAfter主要用于处理在Section或Group内部的插入。
+            // Поэтому здесь мы предполагаем, что parent НЕ null.
+
             if (parent == null)
             {
+                // Логика для корневого уровня должна обрабатываться отдельно.
+                // В текущей архитектуре это происходит в HandleDrop.
+                // Для безопасности просто добавим в конец RootItems, если вызвано.
                 int index = RootItems.IndexOf(reference);
                 if (index >= 0)
                     RootItems.Insert(index + 1, newItem);
-                // Также проверяем, если newItem строка футера и reference тоже строка футера
-                // Но в этом случае parent == null, значит newItem должен быть в RootItems или FooterItems
-                // Лучше оставить логику как есть, т.к. HandleDrop уже обрабатывает футеры отдельно
-                return; // Возврат, чтобы не выполнять дальнейшие проверки
+                return;
             }
             else if (parent is SectionItem section)
             {
-                int groupIndex = section.Groups.IndexOf(reference as GroupItem);
-                if (groupIndex >= 0)
+                int referenceIndexInChildren = section.Children.IndexOf(reference);
+
+                if (referenceIndexInChildren >= 0)
                 {
-                    section.Groups.Insert(groupIndex + 1, (GroupItem)newItem);
-                    section.Children.Insert(section.Children.IndexOf(reference) + 1, newItem);
-                    return;
+                    // Вставка в коллекцию Children происходит автоматически при добавлении в Groups или Properties
+                    // благодаря логике в AddGroup/AddProperty и RemoveChild.
+                    // Нам нужно просто вызвать соответствующий метод добавления, и он сам вставит в правильное место в Children.
+
+                    if (newItem is GroupItem newGroup)
+                    {
+                        // Найдем позицию в коллекции Groups
+                        int referenceIndexInGroups = section.Groups.IndexOf(reference as GroupItem);
+                        if (referenceIndexInGroups >= 0)
+                        {
+                            // Вставляем в Groups, Children обновится автоматически
+                            section.Groups.Insert(referenceIndexInGroups + 1, newGroup);
+                            // Обновляем Children коллекцию вручную, так как AddGroup добавляет в конец
+                            int childInsertIndex = section.Children.IndexOf(reference) + 1;
+                            section.Children.Insert(childInsertIndex, newGroup);
+                            return;
+                        }
+
+                        // Если reference не GroupItem, возможно, это PropertyItem
+                        int referenceIndexInProperties = section.Properties.IndexOf(reference as PropertyItem);
+                        if (referenceIndexInProperties >= 0)
+                        {
+                            // Вставка группы после свойства
+                            section.AddGroup(newGroup); // AddGroup добавляет в конец Groups и Children
+                                                        // Теперь нужно переместить элемент в правильную позицию в Children
+                            var children = section.Children;
+                            int currentChildIndex = children.IndexOf(newGroup);
+                            int targetChildIndex = children.IndexOf(reference) + 1;
+
+                            if (currentChildIndex >= 0 && targetChildIndex >= 0 && currentChildIndex != targetChildIndex)
+                            {
+                                // Перемещаем в Children
+                                var itemToMove = children[currentChildIndex];
+                                children.RemoveAt(currentChildIndex);
+                                // Корректируем индекс, если вставка была вперед
+                                if (currentChildIndex < targetChildIndex) targetChildIndex--;
+                                children.Insert(targetChildIndex, itemToMove);
+                            }
+                            return;
+                        }
+                    }
+                    else if (newItem is PropertyItem newProp)
+                    {
+                        // Найдем позицию в коллекции Properties
+                        int referenceIndexInProperties = section.Properties.IndexOf(reference as PropertyItem);
+                        if (referenceIndexInProperties >= 0)
+                        {
+                            // Вставляем в Properties, Children обновится автоматически
+                            section.Properties.Insert(referenceIndexInProperties + 1, newProp);
+                            // Обновляем Children коллекцию вручную, так как AddProperty добавляет в конец
+                            int childInsertIndex = section.Children.IndexOf(reference) + 1;
+                            section.Children.Insert(childInsertIndex, newProp);
+                            return;
+                        }
+
+                        // Если reference не PropertyItem, возможно, это GroupItem
+                        int referenceIndexInGroups = section.Groups.IndexOf(reference as GroupItem);
+                        if (referenceIndexInGroups >= 0)
+                        {
+                            // Вставка свойства после группы
+                            section.AddProperty(newProp); // AddProperty добавляет в конец Properties и Children
+                                                          // Теперь нужно переместить элемент в правильную позицию в Children
+                            var children = section.Children;
+                            int currentChildIndex = children.IndexOf(newProp);
+                            int targetChildIndex = children.IndexOf(reference) + 1;
+
+                            if (currentChildIndex >= 0 && targetChildIndex >= 0 && currentChildIndex != targetChildIndex)
+                            {
+                                // Перемещаем в Children
+                                var itemToMove = children[currentChildIndex];
+                                children.RemoveAt(currentChildIndex);
+                                // Корректируем индекс, если вставка была вперед
+                                if (currentChildIndex < targetChildIndex) targetChildIndex--;
+                                children.Insert(targetChildIndex, itemToMove);
+                            }
+                            return;
+                        }
+                    }
                 }
-                int propIndex = section.Properties.IndexOf(reference as PropertyItem);
-                if (propIndex >= 0)
-                {
-                    section.Properties.Insert(propIndex + 1, (PropertyItem)newItem);
-                    section.Children.Insert(section.Children.IndexOf(reference) + 1, newItem);
-                    return;
-                }
+                // Если reference не найден в дочерних коллекциях parent, просто добавляем в конец соответствующей коллекции
+                if (newItem is GroupItem g) section.AddGroup(g);
+                else if (newItem is PropertyItem p) section.AddProperty(p);
             }
             else if (parent is GroupItem group)
             {
-                int subGroupIndex = group.Groups.IndexOf(reference as GroupItem);
-                if (subGroupIndex >= 0)
+                int referenceIndexInChildren = group.Children.IndexOf(reference);
+
+                if (referenceIndexInChildren >= 0)
                 {
-                    group.Groups.Insert(subGroupIndex + 1, (GroupItem)newItem);
-                    group.Children.Insert(group.Children.IndexOf(reference) + 1, newItem);
-                    return;
+                    if (newItem is GroupItem newSubGroup)
+                    {
+                        // Найдем позицию в коллекции Groups
+                        int referenceIndexInGroups = group.Groups.IndexOf(reference as GroupItem);
+                        if (referenceIndexInGroups >= 0)
+                        {
+                            // Вставляем в Groups, Children обновится автоматически
+                            group.Groups.Insert(referenceIndexInGroups + 1, newSubGroup);
+                            // Обновляем Children коллекцию вручную
+                            int childInsertIndex = group.Children.IndexOf(reference) + 1;
+                            group.Children.Insert(childInsertIndex, newSubGroup);
+                            return;
+                        }
+
+                        // Если reference не GroupItem, возможно, это PropertyItem
+                        int referenceIndexInProperties = group.Properties.IndexOf(reference as PropertyItem);
+                        if (referenceIndexInProperties >= 0)
+                        {
+                            // Вставка подгруппы после свойства
+                            group.AddGroup(newSubGroup); // AddGroup добавляет в конец Groups и Children
+                                                         // Перемещаем в правильное место в Children
+                            var children = group.Children;
+                            int currentChildIndex = children.IndexOf(newSubGroup);
+                            int targetChildIndex = children.IndexOf(reference) + 1;
+
+                            if (currentChildIndex >= 0 && targetChildIndex >= 0 && currentChildIndex != targetChildIndex)
+                            {
+                                var itemToMove = children[currentChildIndex];
+                                children.RemoveAt(currentChildIndex);
+                                if (currentChildIndex < targetChildIndex) targetChildIndex--;
+                                children.Insert(targetChildIndex, itemToMove);
+                            }
+                            return;
+                        }
+                    }
+                    else if (newItem is PropertyItem newProp)
+                    {
+                        // Найдем позицию в коллекции Properties
+                        int referenceIndexInProperties = group.Properties.IndexOf(reference as PropertyItem);
+                        if (referenceIndexInProperties >= 0)
+                        {
+                            // Вставляем в Properties, Children обновится автоматически
+                            group.Properties.Insert(referenceIndexInProperties + 1, newProp);
+                            // Обновляем Children коллекцию вручную
+                            int childInsertIndex = group.Children.IndexOf(reference) + 1;
+                            group.Children.Insert(childInsertIndex, newProp);
+                            return;
+                        }
+
+                        // Если reference не PropertyItem, возможно, это GroupItem
+                        int referenceIndexInGroups = group.Groups.IndexOf(reference as GroupItem);
+                        if (referenceIndexInGroups >= 0)
+                        {
+                            // Вставка свойства после группы
+                            group.AddProperty(newProp); // AddProperty добавляет в конец Properties и Children
+                                                        // Перемещаем в правильное место в Children
+                            var children = group.Children;
+                            int currentChildIndex = children.IndexOf(newProp);
+                            int targetChildIndex = children.IndexOf(reference) + 1;
+
+                            if (currentChildIndex >= 0 && targetChildIndex >= 0 && currentChildIndex != targetChildIndex)
+                            {
+                                var itemToMove = children[currentChildIndex];
+                                children.RemoveAt(currentChildIndex);
+                                if (currentChildIndex < targetChildIndex) targetChildIndex--;
+                                children.Insert(targetChildIndex, itemToMove);
+                            }
+                            return;
+                        }
+                    }
                 }
-                int propIndex = group.Properties.IndexOf(reference as PropertyItem);
-                if (propIndex >= 0)
-                {
-                    group.Properties.Insert(propIndex + 1, (PropertyItem)newItem);
-                    group.Children.Insert(group.Children.IndexOf(reference) + 1, newItem);
-                    return;
-                }
+                // Если reference не найден в дочерних коллекциях parent, просто добавляем в конец
+                if (newItem is GroupItem g) group.AddGroup(g);
+                else if (newItem is PropertyItem p) group.AddProperty(p);
             }
-            // Если newItem строка футера, и он был перемещен в основное дерево, нужно переместить его обратно в FooterItems
-            // Но HandleDrop уже должен был это обработать
+            // Если newItem строка футера или другой тип, и он был перемещен в основное дерево,
+            // это должно обрабатываться в HandleDrop, а не здесь.
         }
 
         public void MoveItemToRoot(object draggedItem)
