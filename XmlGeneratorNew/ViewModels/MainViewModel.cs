@@ -841,17 +841,24 @@ namespace XmlGeneratorNew.ViewModels
                 writer.WriteAttributeString("e", "captionStyle", null, "GroupHeader");
             if (group.OdGroupStyleIsNewParagraphBoldHeader)
                 writer.WriteAttributeString("od", "groupStyle", null, "NewParagraphBoldHeader");
-            // Добавлено: запись атрибута semd
             if (!string.IsNullOrEmpty(group.Semd))
                 writer.WriteAttributeString("semd", null, group.Semd);
-            // НОВОЕ: запись атрибута uid, если он не пуст
             if (!string.IsNullOrEmpty(group.Uid))
                 writer.WriteAttributeString("uid", group.Uid);
 
-            foreach (var prop in group.Properties)
-                WriteProperty(writer, prop);
-            foreach (var subgroup in group.Groups)
-                WriteGroup(writer, subgroup);
+            foreach (var child in group.Children)
+            {
+                switch (child)
+                {
+                    case PropertyItem prop:
+                        WriteProperty(writer, prop);
+                        break;
+                    case GroupItem subGroup:
+                        WriteGroup(writer, subGroup);
+                        break;
+                }
+            }
+
             writer.WriteEndElement();
         }
 
@@ -902,17 +909,24 @@ namespace XmlGeneratorNew.ViewModels
             writer.WriteAttributeString("name", section.Name ?? "");
             if (!string.IsNullOrEmpty(section.Title))
                 writer.WriteAttributeString("title", section.Title);
-            // Добавлено: запись атрибута semd
             if (!string.IsNullOrEmpty(section.Semd))
                 writer.WriteAttributeString("semd", section.Semd);
-            // НОВОЕ: запись атрибута uid, если он не пуст
             if (!string.IsNullOrEmpty(section.Uid))
                 writer.WriteAttributeString("uid", section.Uid);
 
-            foreach (var group in section.Groups)
-                WriteGroup(writer, group);
-            foreach (var prop in section.Properties)
-                WriteProperty(writer, prop);
+            foreach (var child in section.Children)
+            {
+                switch (child)
+                {
+                    case PropertyItem prop:
+                        WriteProperty(writer, prop);
+                        break;
+                    case GroupItem group:
+                        WriteGroup(writer, group);
+                        break;
+                }
+            }
+
             writer.WriteEndElement();
         }
 
