@@ -1,15 +1,21 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Xml;
 using System.Xml.Linq;
+using XmlGeneratorNew.DTOs;
 using XmlGeneratorNew.Models;
 using XmlGeneratorNew.Views;
 
@@ -29,6 +35,9 @@ namespace XmlGeneratorNew.ViewModels
         private int groupIndex = 1;
         private int propertyIndex = 1;
         private string currentSavePath = "metadata.xml";
+        private const string DRAFT_FILE_NAME = "draft.json";
+
+
         public IRelayCommand AddSectionCommand { get; }
         public IRelayCommand AddGroupCommand { get; }
         public IRelayCommand AddPropertyCommand { get; }
@@ -43,17 +52,16 @@ namespace XmlGeneratorNew.ViewModels
         public IRelayCommand<object> DuplicateCommand { get; }
         public IRelayCommand OpenTypeSettingsCommand { get; }
         public IRelayCommand OpenBlocksSettingsCommand { get; }
+        public IRelayCommand SaveDraftCommand { get; }
 
         public MainViewModel()
         {
             AddSectionToRootCommand = new RelayCommand(AddSectionToRoot);
             AddGroupToRootCommand = new RelayCommand(AddGroupToRoot);
             AddPropertyToRootCommand = new RelayCommand(AddPropertyToRoot);
-            // ---  Команды   для   редактора  ( добавляют   в   выбранный   элемент ) ---
             AddGroupCommand = new RelayCommand(AddGroup);
             AddPropertyCommand = new RelayCommand(AddProperty);
             AddSectionCommand = new RelayCommand(AddSection);
-            //    Остальные   команды
             DeleteCommand = new RelayCommand(DeleteSelected, CanDelete);
             ResetCommand = new RelayCommand(ResetAll);
             LoadCommand = new RelayCommand(LoadXml);
@@ -65,9 +73,238 @@ namespace XmlGeneratorNew.ViewModels
             );
             OpenTypeSettingsCommand = new RelayCommand(OpenTypeSettings);
             OpenBlocksSettingsCommand = new RelayCommand(OpenBlocksSettings);
+            SaveDraftCommand = new RelayCommand(async () => await SaveDraftAsync());
 
-            // Инициализация FooterItems
             InitializeFooterItems();
+            UpdateFooterItemsFromSettings();
+        }
+        private string GetDraftPath()
+        {
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DRAFT_FILE_NAME);
+        }
+        public async Task SaveDraftAsync()
+        {
+            try
+            {
+                var draftData = new DraftData
+                {
+                    TemplateName = TemplateName,
+                    FooterItems = new List<string>(FooterItems),
+                    TypeSettings = _typeSettings,
+                    BlockSettings = _blocksSettings
+                };
+
+                foreach (var item in RootItems)
+                {
+                    DraftItemDto dto = item switch
+                    {
+                        SectionItem s => new DraftItemDto
+                        {
+                            ItemType = "section",
+                            Json = JsonConvert.SerializeObject(s)
+                        },
+                        GroupItem g => new DraftItemDto
+                        {
+                            ItemType = "group",
+                            Json = JsonConvert.SerializeObject(g)
+                        },
+                        PropertyItem p => new DraftItemDto
+                        {
+                            ItemType = "property",
+                            Json = JsonConvert.SerializeObject(p)
+                        },
+                        string footer when IsFooterString(footer) => new DraftItemDto
+                        {
+                            ItemType = "footer",
+                            Json = JsonConvert.SerializeObject(footer)
+                        },
+                        _ => null
+                    };
+
+                    if (dto != null)
+                        draftData.RootItems.Add(dto);
+                }
+
+                string json = JsonConvert.SerializeObject(
+                    draftData,
+                    Newtonsoft.Json.Formatting.Indented,
+                    new JsonSerializerSettings
+                    {
+                        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                    });
+
+                string path = GetDraftPath();
+                await File.WriteAllTextAsync(path, json);
+                System.Diagnostics.Debug.WriteLine($"Черновик сохранён в {path}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка сохранения черновика: {ex.Message}");
+                MessageBox.Show("Не удалось сохранить черновик.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private void RebuildChildren(SectionItem section)
+        {
+            section.Children.Clear();
+            foreach (var g in section.Groups)
+            {
+                section.Children.Add(g);
+                RebuildChildren(g);
+            }
+            foreach (var p in section.Properties)
+                section.Children.Add(p);
+        }
+
+        private void RebuildChildren(GroupItem group)
+        {
+            group.Children.Clear();
+            foreach (var g in group.Groups)
+            {
+                group.Children.Add(g);
+                RebuildChildren(g);
+            }
+            foreach (var p in group.Properties)
+                group.Children.Add(p);
+        }
+
+        private async Task<bool> LoadDraftAsync()
+        {
+            string path = GetDraftPath();
+            if (!File.Exists(path))
+                return false;
+
+            try
+            {
+                string json = await File.ReadAllTextAsync(path);
+                var draftData = JsonConvert.DeserializeObject<DraftData>(json);
+                if (draftData == null)
+                    return false;
+
+                RootItems.Clear();
+                FooterItems.Clear();
+
+                TemplateName = draftData.TemplateName;
+
+                foreach (var dto in draftData.RootItems)
+                {
+                    switch (dto.ItemType)
+                    {
+                        case "section":
+                            {
+                                var s = JsonConvert.DeserializeObject<SectionItem>(dto.Json);
+                                if (s != null)
+                                {
+                                    RebuildChildren(s);
+                                    RootItems.Add(s);
+                                }
+                                break;
+                            }
+                        case "group":
+                            {
+                                var g = JsonConvert.DeserializeObject<GroupItem>(dto.Json);
+                                if (g != null)
+                                {
+                                    RebuildChildren(g);
+                                    RootItems.Add(g);
+                                }
+                                break;
+                            }
+                        case "property":
+                            {
+                                var p = JsonConvert.DeserializeObject<PropertyItem>(dto.Json);
+                                if (p != null)
+                                    RootItems.Add(p);
+                                break;
+                            }
+                        case "footer":
+                            {
+                                var f = JsonConvert.DeserializeObject<string>(dto.Json);
+                                if (!string.IsNullOrEmpty(f))
+                                    FooterItems.Add(f);
+                                break;
+                            }
+                    }
+                }
+
+                foreach (var item in draftData.FooterItems)
+                    if (!FooterItems.Contains(item))
+                        FooterItems.Add(item);
+
+                _typeSettings = draftData.TypeSettings ?? new TypeSettingsViewModel();
+                _blocksSettings = draftData.BlockSettings ?? new BlocksSettingsViewModel();
+
+                UpdateFooterItemsFromSettings();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка загрузки черновика: {ex.Message}");
+                return false;
+            }
+        }
+        private void DeleteDraft()
+        {
+            try
+            {
+                string path = GetDraftPath();
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch { }
+        }
+        public async Task<bool> TryOfferRestoreDraftAsync()
+        {
+            string path = GetDraftPath();
+            if (!File.Exists(path))
+                return false;
+
+            var result = MessageBox.Show(
+                "Найден сохранённый проект. Хотите продолжить работу с ним?",
+                "Продолжить работу",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                bool loaded = await LoadDraftAsync();
+                if (!loaded)
+                {
+                    MessageBox.Show("Не удалось загрузить сохранённый проект.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    DeleteDraft();
+                }
+                return loaded;
+            }
+            else
+            {
+                // Начать новый проект: удаляем черновик и чистим состояние
+                DeleteDraft();
+                RootItems.Clear();
+                FooterItems.Clear();
+                TemplateName = string.Empty;
+                UpdateFooterItemsFromSettings();
+                return false;
+            }
+        }
+        public async Task<bool> AskSaveDraftOnExitAsync()
+        {
+            var result = MessageBox.Show(
+                "Сохранить текущий проект как черновик перед выходом?",
+                "Сохранить черновик",
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Cancel)
+                return false;
+
+            if (result == MessageBoxResult.Yes)
+                await SaveDraftAsync();
+
+            return true;
+        }
+        private async Task AutoSaveDraftAsync()
+        {
+            await SaveDraftAsync();
         }
 
         private void InitializeFooterItems()
@@ -77,7 +314,7 @@ namespace XmlGeneratorNew.ViewModels
             FooterItems.CollectionChanged += FooterItems_CollectionChanged;
             UpdateFooterItemsFromSettings();
         }
-
+        
         private void FooterItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             // Уведомляем команды об изменении, если нужно
@@ -172,60 +409,82 @@ namespace XmlGeneratorNew.ViewModels
             }
         }
 
-        private void AddSection()
+        private async void AddSection()
         {
             var newSection = new SectionItem
             {
-                Name = $"Секция_{RootItems.OfType<SectionItem>().Count() + 1}",
+                Name = $"Секция {RootItems.OfType<SectionItem>().Count() + 1}",
                 IsExpanded = true,
                 IsSelected = true
             };
+
             RootItems.Add(newSection);
             SelectedItem = newSection;
+
+            await AutoSaveDraftAsync();
         }
 
-        private void AddGroup()
+        private async void AddGroup()
         {
             if (SelectedItem is SectionItem selectedSection)
             {
-                var newGroup = new GroupItem { Name = $"Группа_{groupIndex++}", IsExpanded = true, IsSelected = true };
+                var newGroup = new GroupItem
+                {
+                    Name = $"Группа {groupIndex++}",
+                    IsExpanded = true,
+                    IsSelected = true
+                };
                 selectedSection.AddGroup(newGroup);
                 SelectedItem = newGroup;
             }
             else if (SelectedItem is GroupItem selectedGroup)
             {
-                var newSubGroup = new GroupItem { Name = $"Подгруппа_{groupIndex++}", IsExpanded = true, IsSelected = true };
+                var newSubGroup = new GroupItem
+                {
+                    Name = $"Группа {groupIndex++}",
+                    IsExpanded = true,
+                    IsSelected = true
+                };
                 selectedGroup.AddGroup(newSubGroup);
                 SelectedItem = newSubGroup;
             }
             else
             {
-                var newGroup = new GroupItem { Name = $"Группа_{groupIndex++}", IsExpanded = true, IsSelected = true };
+                var newGroup = new GroupItem
+                {
+                    Name = $"Группа {groupIndex++}",
+                    IsExpanded = true,
+                    IsSelected = true
+                };
                 RootItems.Add(newGroup);
                 SelectedItem = newGroup;
             }
+
+            await AutoSaveDraftAsync();
         }
 
-        private void AddProperty()
+        private async void AddProperty()
         {
             if (SelectedItem is GroupItem group)
             {
-                var prop = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
+                var prop = new PropertyItem { Name = $"Свойство {propertyIndex++}" };
                 group.AddProperty(prop);
                 SelectedItem = prop;
             }
             else if (SelectedItem is SectionItem section)
             {
-                var prop = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
+                var prop = new PropertyItem { Name = $"Свойство {propertyIndex++}" };
                 section.AddProperty(prop);
                 SelectedItem = prop;
             }
             else
             {
-                var prop = new PropertyItem { Name = $"Свойство_{propertyIndex++}" };
+                var prop = new PropertyItem { Name = $"Свойство {propertyIndex++}" };
                 RootItems.Add(prop);
                 SelectedItem = prop;
             }
+
+            await AutoSaveDraftAsync();
         }
 
         // === Методы для добавления строго в корень ===
@@ -264,7 +523,7 @@ namespace XmlGeneratorNew.ViewModels
         }
 
         private bool CanDelete() => SelectedItem != null;
-        private void DeleteSelected()
+        private async void DeleteSelected()
         {
             if (SelectedItem == null) return;
             object? itemToRemove = SelectedItem; //   Сохраняем   ссылку   на   удаляемый   элемент
@@ -350,6 +609,7 @@ namespace XmlGeneratorNew.ViewModels
                 AddPropertyCommand.NotifyCanExecuteChanged();
                 AddSectionCommand.NotifyCanExecuteChanged();
             }
+            await AutoSaveDraftAsync();
         }
 
         private object? FindParentOfPropertyAndRemove(PropertyItem target, out bool removed)
@@ -504,54 +764,55 @@ namespace XmlGeneratorNew.ViewModels
             return false;
         }
 
-        private void ResetAll()
+        private async void ResetAll()
         {
-            var result = MessageBox.Show("Вы уверены, что хотите очистить все данные и начать с нуля?",
-                                         "Подтверждение сброса",
-                                         MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var result = MessageBox.Show("Очистить всё?", "Сброс", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
                 RootItems.Clear();
-                FooterItems.Clear(); // Очищаем футер тоже
+                FooterItems.Clear();
                 SelectedItem = null;
                 DeleteCommand.NotifyCanExecuteChanged();
-                // Инициализируем футер заново
                 UpdateFooterItemsFromSettings();
+
+                await AutoSaveDraftAsync();
             }
         }
 
-        private void LoadXml()
+        private async void LoadXml()
         {
-            var openFileDialog = new OpenFileDialog { Filter = "XML файлы (*.xml)|*.xml| Все файлы (*.*)|*.*" };
+            var openFileDialog = new OpenFileDialog
+            {
+                Filter = "XML файлы (*.xml)|*.xml|Все файлы (*.*)|*.*"
+            };
+
             if (openFileDialog.ShowDialog() == true)
             {
                 try
                 {
                     groupIndex = 1;
                     propertyIndex = 1;
+
                     var loadedItems = LoadXmlToModel(openFileDialog.FileName);
                     RootItems.Clear();
-                    FooterItems.Clear(); // Очищаем футер при загрузке
+                    FooterItems.Clear();
+
                     foreach (var item in loadedItems)
                     {
-                        // Проверяем, является ли элемент строкой-футером
                         if (item is string strItem && IsFooterString(strItem))
-                        {
-                            FooterItems.Add(strItem); // Добавляем в футер
-                        }
+                            FooterItems.Add(strItem);
                         else
-                        {
-                            RootItems.Add(item); // Добавляем в основное дерево
-                        }
+                            RootItems.Add(item);
                     }
-                    // Убедимся, что все выбранные элементы в настройках присутствуют в футере
-                    UpdateFooterItemsFromSettings(); // Это добавит недостающие, если они есть в настройках
 
-                    MessageBox.Show("XML шаблон успешно загружен .", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                    UpdateFooterItemsFromSettings();
+                    MessageBox.Show("XML успешно загружен.", "Загрузка XML", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    await AutoSaveDraftAsync();
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
-                    MessageBox.Show($" Ошибка при загрузке XML: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Ошибка загрузки XML: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -787,9 +1048,9 @@ namespace XmlGeneratorNew.ViewModels
                     {
                         writer.WriteStartElement("e", "instrumentalProbeConclusion", "http://www.sanatorium-is.ru/editor");
                         writer.WriteAttributeString("noPathologyCounter", "True");
-                        writer.WriteAttributeString("autoSuggestName", "ИИ. заключение");
+                        writer.WriteAttributeString("autoSuggestName", "ИИ.заключение");
                         writer.WriteStartElement("e", "recommendations", "http://www.sanatorium-is.ru/editor");
-                        writer.WriteAttributeString("autoSuggestName", "ИИ. рекомендации");
+                        writer.WriteAttributeString("autoSuggestName", "ИИ.рекомендации");
                         writer.WriteEndElement();
                         writer.WriteEndElement(); // instrumentalProbeConclusion
                     }
@@ -965,6 +1226,7 @@ namespace XmlGeneratorNew.ViewModels
                 InsertAfter(parent, SelectedItem, duplicatedItem);
                 SelectedItem = duplicatedItem;
             }
+            _ = AutoSaveDraftAsync();
         }
 
         private SectionItem DuplicateSection(SectionItem section)
@@ -1205,6 +1467,7 @@ namespace XmlGeneratorNew.ViewModels
             }
 
             SelectedItem = draggedItem;
+            _ = AutoSaveDraftAsync();
         }
         private bool IsDescendantOf(object potentialDescendant, object potentialAncestor)
         {
@@ -1305,7 +1568,7 @@ namespace XmlGeneratorNew.ViewModels
         {
             // Если parent null, это означает вставку в RootItems.
             // Однако в текущей логике HandleDrop, для корневого уровня используется MoveItemToRoot или прямая вставка в RootItems.
-            // Этот метод InsertAfter主要用于处理在Section或Group内部的插入。
+            // Этот метод InsertAfter Section Group
             // Поэтому здесь мы предполагаем, что parent НЕ null.
 
             if (parent == null)

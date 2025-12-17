@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
+using System.Runtime.Serialization;
 
 namespace XmlGeneratorNew.Models
 {
@@ -30,6 +31,14 @@ namespace XmlGeneratorNew.Models
         public ObservableCollection<PropertyItem> Properties { get; } = new();
         public ObservableCollection<object> Children { get; } = new();
 
+        private void OnDeserialized(StreamingContext context)
+        {
+            Children.Clear();
+            foreach (var g in Groups)
+                Children.Add(g);
+            foreach (var p in Properties)
+                Children.Add(p);
+        }
         public void AddGroup(GroupItem group)
         {
             Groups.Add(group);

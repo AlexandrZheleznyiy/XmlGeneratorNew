@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
+using System.Runtime.Serialization;
 
 namespace XmlGeneratorNew.Models
 {
@@ -67,6 +68,15 @@ namespace XmlGeneratorNew.Models
         public GroupItem()
         {
             // Подписка не обязательна, так как добавление идёт через специальные методы
+        }
+        private void OnDeserialized(StreamingContext context)
+        {
+            // гарантируем, что Children синхронизирован
+            Children.Clear();
+            foreach (var g in Groups)
+                Children.Add(g);
+            foreach (var p in Properties)
+                Children.Add(p);
         }
 
         public void AddGroup(GroupItem group)

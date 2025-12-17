@@ -1,21 +1,40 @@
-﻿using System.Windows;
+﻿using System;
+using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using XmlGeneratorNew.ViewModels;
-using System;
 
 namespace XmlGeneratorNew.Views
 {
     public partial class MainWindow : Window
     {
-        private Point _dragStartPoint;
+        private Point dragStartPoint;
         private TreeView treeView;
+        private MainViewModel _vm;
+
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new MainViewModel();
+
+            // ЕДИНСТВЕННЫЙ экземпляр VM
+            _vm = new MainViewModel();
+            DataContext = _vm;
+
             treeView = MainTreeView;
+
+            Loaded += MainWindow_Loaded;
+            Closing += MainWindow_Closing;
+        }
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            // При старте один раз предлагаем восстановить черновик
+            await _vm.TryOfferRestoreDraftAsync();
+        }
+        private async void MainWindow_Closing(object? sender, CancelEventArgs e)
+        {
+            await _vm.SaveDraftAsync();
         }
 
         private void TreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -45,58 +64,81 @@ namespace XmlGeneratorNew.Views
 
         private void TreeView_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            _dragStartPoint = e.GetPosition(null);
+            dragStartPoint = e.GetPosition(null);
         }
 
         private void TreeView_MouseMove(object sender, MouseEventArgs e)
         {
-            Point mousePos = e.GetPosition(null);
-            Vector diff = _dragStartPoint - mousePos;
-            if (e.LeftButton == MouseButtonState.Pressed &&
-                (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
-                Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance))
+            if (e.LeftButton == MouseButtonState.Pressed)
             {
-                TreeView treeView = sender as TreeView;
-                TreeViewItem treeViewItem =
-                    FindAncestor<TreeViewItem>((DependencyObject)e.OriginalSource);
-
-                if (treeViewItem == null)
-                    return;
-
-                object draggedItem = treeViewItem.DataContext;
-                if (draggedItem == null)
-                    return;
-
-                //  Инициируем  DragDrop  операцию   и   передаём   перетаскиваемый   объект
-                DataObject dragData = new DataObject("myFormat", draggedItem);
-                DragDrop.DoDragDrop(treeViewItem, dragData, DragDropEffects.Move);
+                var position = e.GetPosition(null);
+                if (Math.Abs(position.X - dragStartPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                    Math.Abs(position.Y - dragStartPoint.Y) > SystemParameters.MinimumVerticalDragDistance)
+                {
+                    StartDrag(e);
+                }
             }
+        }
+        private void StartDrag(MouseEventArgs e)
+        {
+            if (treeView.SelectedItem == null)
+                return;
+
+            var draggedItem = treeView.SelectedItem;
+            if (draggedItem == null)
+                return;
+
+            var dragData = new DataObject("treeViewItem", draggedItem);
+            DragDrop.DoDragDrop(treeView, dragData, DragDropEffects.Move);
         }
 
         private void TreeView_DragOver(object sender, DragEventArgs e)
         {
-            if (!e.Data.GetDataPresent("myFormat"))
-            {
-                e.Effects = DragDropEffects.None;
-                e.Handled = true;
-                return;
-            }
-            object? targetData = GetDataContextTreeViewItem(e);
             e.Effects = DragDropEffects.Move;
             e.Handled = true;
+        }
+        private void TreeView_DropOnRoot(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent("treeViewItem"))
+                return;
+
+            var draggedItem = e.Data.GetData("treeViewItem");
+            if (draggedItem == null)
+                return;
+
+            if (DataContext is MainViewModel vm)
+            {
+                vm.MoveItemToRoot(draggedItem);
+            }
         }
 
         private void TreeView_Drop(object sender, DragEventArgs e)
         {
-            if (!e.Data.GetDataPresent("myFormat")) return;
-            object? draggedData = e.Data.GetData("myFormat");
-            object? targetData = GetDataContextTreeViewItem(e);
-            if (draggedData == null) return;
+            if (!e.Data.GetDataPresent("treeViewItem"))
+                return;
+
+            var draggedItem = e.Data.GetData("treeViewItem");
+            if (draggedItem == null)
+                return;
+
+            var target = GetNearestContainer(e.OriginalSource as UIElement);
+            object? targetItem = target?.DataContext;
+
             if (DataContext is MainViewModel vm)
             {
-                vm.HandleDrop(draggedData, targetData);
+                vm.HandleDrop(draggedItem, targetItem);
             }
-            e.Handled = true;
+        }
+        private TreeViewItem? GetNearestContainer(UIElement? element)
+        {
+            while (element != null && element != treeView)
+            {
+                if (element is TreeViewItem item)
+                    return item;
+
+                element = VisualTreeHelper.GetParent(element) as UIElement;
+            }
+            return null;
         }
 
         private object? GetDataContextTreeViewItem(DragEventArgs e)
@@ -119,13 +161,14 @@ namespace XmlGeneratorNew.Views
         // --- Обработчики для FooterListBox ---
         private void FooterListBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            _dragStartPoint = e.GetPosition(null);
+            dragStartPoint = e.GetPosition(null);
         }
 
         private void FooterListBox_MouseMove(object sender, MouseEventArgs e)
         {
             Point mousePos = e.GetPosition(null);
-            Vector diff = _dragStartPoint - mousePos;
+            Vector diff = dragStartPoint - mousePos;
+
             if (e.LeftButton == MouseButtonState.Pressed &&
                 (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
                  Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance))
