@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -534,12 +535,10 @@ namespace XmlGeneratorNew.ViewModels
                     RootItems.Clear();
                     FooterItems.Clear();
 
-                    // Применяем загруженные настройки
                     TemplateName = templateName;
                     _typeSettings = typeSettings;
                     _blocksSettings = blockSettings;
 
-                    // Разделяем элементы на основные и футер
                     foreach (var item in rootItems)
                     {
                         if (item is string strItem && _treeService.IsFooterString(strItem))
@@ -548,9 +547,35 @@ namespace XmlGeneratorNew.ViewModels
                             RootItems.Add(item);
                     }
 
-                    // Обновляем футер на основе загруженных настроек
                     UpdateFooterItemsFromSettings();
 
+                    // Проверяем наличие файла NoParsing в папке Загрузки
+                    string downloadsFolder = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                        "Downloads"
+                    );
+
+                    if (!Directory.Exists(downloadsFolder))
+                    {
+                        downloadsFolder = Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                            "Загрузки"
+                        );
+                    }
+
+                    string fileName = Path.GetFileNameWithoutExtension(openFileDialog.FileName);
+                    var noParsingFiles = Directory.GetFiles(downloadsFolder, $"{fileName}_NoParsing_*.xml")
+                                                  .OrderByDescending(f => File.GetCreationTime(f))
+                                                  .FirstOrDefault();
+
+                    if (noParsingFiles != null)
+                    {
+                        MessageBox.Show(
+                            $"XML загружен.\n\n⚠️ Обнаружены нераспознанные элементы!\n\nОтчёт сохранён:\n{noParsingFiles}",
+                            "Внимание",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                    }
 
                     await SaveDraftAsync();
                 }
@@ -560,6 +585,7 @@ namespace XmlGeneratorNew.ViewModels
                 }
             }
         }
+
 
         private void SaveXml()
         {

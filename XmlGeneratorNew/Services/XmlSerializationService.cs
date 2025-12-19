@@ -1,7 +1,9 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
@@ -18,6 +20,7 @@ namespace XmlGeneratorNew.Services
     {
         private int _groupIndex = 1;
         private int _propertyIndex = 1;
+        private Dictionary<string, UnparsedElement> _unparsedElements = new();
 
         /// <summary>
         /// Загружает XML файл и преобразует в модель данных
@@ -26,6 +29,9 @@ namespace XmlGeneratorNew.Services
         {
             _groupIndex = 1;
             _propertyIndex = 1;
+            _unparsedElements.Clear();
+
+            System.Diagnostics.Debug.WriteLine($"[LoadXml] Начало загрузки: {filePath}");
 
             var rootItems = new ObservableCollection<object>();
             var doc = XDocument.Load(filePath);
@@ -36,7 +42,6 @@ namespace XmlGeneratorNew.Services
 
             string templateName = (string?)root.Attribute("name") ?? "";
 
-            // Определяем настройки типов и блоков из содержимого XML
             var typeSettings = DetectTypeSettings(root);
             var blockSettings = DetectBlockSettings(root);
 
@@ -47,8 +52,195 @@ namespace XmlGeneratorNew.Services
                     rootItems.Add(item);
             }
 
+            System.Diagnostics.Debug.WriteLine($"[LoadXml] Нераспознанных элементов: {_unparsedElements.Count}");
+
+            // Сохраняем нераспознанные элементы в файл
+            if (_unparsedElements.Count > 0)
+            {
+                SaveUnparsedElementsToFile(filePath);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("[LoadXml] Все элементы распознаны успешно");
+            }
+
             return (rootItems, templateName, typeSettings, blockSettings);
         }
+
+        private object? ParseElement(XElement element)
+        {
+            object? result = element.Name.LocalName switch
+            {
+                "section" => ParseSection(element),
+                "group" => ParseGroup(element),
+                "property" => ParseProperty(element),
+                "consultantDefaultConclusion" => FooterItemNames.Conclusion,
+                "instrumentalProbeConclusion" => FooterItemNames.Conclusion,
+                "labProbeConclusion" => FooterItemNames.Conclusion,
+                "probeGenericResultSelection" => FooterItemNames.Conclusion,
+                "diagnosisSelection" => FooterItemNames.Diagnosis,
+                "icfSectionInitial" => FooterItemNames.IcfInitial,
+                "icfSectionRecurrent" => ParseIcfRecurrent(element),
+                "assignmentsView" => FooterItemNames.Assignments,
+                "treatmentActions" => FooterItemNames.TreatmentActions,
+                "attachments" => FooterItemNames.Attachments,
+                _ => null
+            };
+
+            // Если элемент не распознан, добавляем в список
+            if (result == null)
+            {
+                AddUnparsedElement(element);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Добавляет нераспознанный элемент в словарь
+        /// </summary>
+        private void AddUnparsedElement(XElement element)
+        {
+            string tagName = element.Name.LocalName;
+            string fullXml = element.ToString();
+
+            System.Diagnostics.Debug.WriteLine($"[AddUnparsed] Найден нераспознанный элемент: <{tagName}>");
+
+            // Если элемент уже есть, увеличиваем счётчик
+            if (_unparsedElements.ContainsKey(tagName))
+            {
+                _unparsedElements[tagName].Count++;
+                System.Diagnostics.Debug.WriteLine($"[AddUnparsed] Увеличен счётчик для <{tagName}>: {_unparsedElements[tagName].Count}");
+            }
+            else
+            {
+                var unparsed = new UnparsedElement
+                {
+                    TagName = tagName,
+                    InnerXml = element.Value,
+                    FullXml = fullXml
+                };
+
+                // Собираем атрибуты
+                foreach (var attr in element.Attributes())
+                {
+                    unparsed.Attributes[attr.Name.ToString()] = attr.Value;
+                }
+
+                _unparsedElements[tagName] = unparsed;
+                System.Diagnostics.Debug.WriteLine($"[AddUnparsed] Добавлен новый элемент <{tagName}>");
+            }
+        }
+
+        /// <summary>
+        /// Сохраняет нераспознанные элементы в файл
+        /// </summary>
+        private void SaveUnparsedElementsToFile(string originalXmlPath)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[SaveUnparsed] Начало сохранения. Путь: {originalXmlPath}");
+
+                // Получаем путь к папке "Загрузки"
+                string downloadsFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    "Downloads"
+                );
+
+                // Если папка Downloads не существует (например, на русской Windows это "Загрузки")
+                if (!Directory.Exists(downloadsFolder))
+                {
+                    downloadsFolder = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                        "Загрузки"
+                    );
+                }
+
+                // Если и это не сработало, используем рабочий стол
+                if (!Directory.Exists(downloadsFolder))
+                {
+                    downloadsFolder = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                    System.Diagnostics.Debug.WriteLine($"[SaveUnparsed] Папка загрузок не найдена, используем Desktop: {downloadsFolder}");
+                }
+
+                string fileName = Path.GetFileNameWithoutExtension(originalXmlPath);
+                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                string noParsingFilePath = Path.Combine(downloadsFolder, $"{fileName}_NoParsing_{timestamp}.xml");
+
+                System.Diagnostics.Debug.WriteLine($"[SaveUnparsed] Полный путь к файлу: {noParsingFilePath}");
+
+                // Создаём XML документ
+                var xmlDoc = new XDocument(
+                    new XDeclaration("1.0", "utf-8", "yes"),
+                    new XElement("UnparsedElements",
+                        new XAttribute("source", Path.GetFileName(originalXmlPath)),
+                        new XAttribute("sourcePath", originalXmlPath),
+                        new XAttribute("analysisDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")),
+                        new XAttribute("totalCount", _unparsedElements.Count),
+
+                        // Добавляем инструкции как комментарий
+                        new XComment(@"
+                        =============================================================
+                        ИНСТРУКЦИЯ ПО ИСПОЛЬЗОВАНИЮ:
+                        1. Изучите нераспознанные теги ниже
+                        2. Добавьте их обработку в XmlSerializationService.ParseElement()
+                        3. При необходимости создайте новые модели данных
+                        4. Обновите константы в FooterItemNames.cs
+                        =============================================================
+                        "),
+
+                        // Добавляем каждый нераспознанный элемент
+                        from kvp in _unparsedElements.OrderBy(x => x.Key)
+                        let element = kvp.Value
+                        select new XElement("UnparsedElement",
+                            new XAttribute("tagName", element.TagName),
+                            new XAttribute("count", element.Count),
+
+                            // Добавляем атрибуты
+                            element.Attributes.Count > 0
+                                ? new XElement("Attributes",
+                                    from attr in element.Attributes
+                                    select new XElement("Attribute",
+                                        new XAttribute("name", attr.Key),
+                                        new XAttribute("value", attr.Value)
+                                    )
+                                )
+                                : null,
+
+                            // Добавляем полный XML как CDATA
+                            new XElement("FullXml",
+                                new XCData(element.FullXml)
+                            )
+                        )
+                    )
+                );
+
+                // Сохраняем с форматированием
+                var settings = new XmlWriterSettings
+                {
+                    Indent = true,
+                    IndentChars = "  ",
+                    NewLineChars = "\r\n",
+                    Encoding = Encoding.UTF8
+                };
+
+                using (var writer = XmlWriter.Create(noParsingFilePath, settings))
+                {
+                    xmlDoc.Save(writer);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[SaveUnparsed] ✅ Файл успешно сохранён: {noParsingFilePath}");
+                System.Diagnostics.Debug.WriteLine($"[SaveUnparsed] Размер файла: {new FileInfo(noParsingFilePath).Length} байт");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SaveUnparsed] ❌ Ошибка сохранения: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[SaveUnparsed] Stack trace: {ex.StackTrace}");
+            }
+        }
+
+
+
         /// <summary>
         /// Определяет настройки типа документа из XML
         /// </summary>
@@ -169,24 +361,6 @@ namespace XmlGeneratorNew.Services
             writer.WriteEndDocument();
         }
 
-        private object? ParseElement(XElement element)
-        {
-            return element.Name.LocalName switch
-            {
-                "section" => ParseSection(element),
-                "group" => ParseGroup(element),
-                "property" => ParseProperty(element),
-                "consultantDefaultConclusion" or "instrumentalProbeConclusion" or
-                "labProbeConclusion" or "probeGenericResultSelection" => FooterItemNames.Conclusion,
-                "diagnosisSelection" => FooterItemNames.Diagnosis,
-                "icfSectionInitial" => FooterItemNames.IcfInitial,
-                "icfSectionRecurrent" => ParseIcfRecurrent(element),
-                "assignmentsView" => FooterItemNames.Assignments,
-                "treatmentActions" => FooterItemNames.TreatmentActions,
-                "attachments" => FooterItemNames.Attachments,
-                _ => null
-            };
-        }
         /// <summary>
         /// Определяет тип МКФ элемента (повторный или заключительный)
         /// </summary>
