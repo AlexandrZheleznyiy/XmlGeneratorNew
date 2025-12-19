@@ -107,11 +107,27 @@ namespace XmlGeneratorNew.Services
                 "consultantDefaultConclusion" or "instrumentalProbeConclusion" or
                 "labProbeConclusion" or "probeGenericResultSelection" => FooterItemNames.Conclusion,
                 "diagnosisSelection" => FooterItemNames.Diagnosis,
+                "icfSectionInitial" => FooterItemNames.IcfInitial,
+                "icfSectionRecurrent" => ParseIcfRecurrent(element),
                 "assignmentsView" => FooterItemNames.Assignments,
                 "treatmentActions" => FooterItemNames.TreatmentActions,
                 "attachments" => FooterItemNames.Attachments,
                 _ => null
             };
+        }
+        /// <summary>
+        /// Определяет тип МКФ элемента (повторный или заключительный)
+        /// </summary>
+        private string ParseIcfRecurrent(XElement element)
+        {
+            // Проверяем наличие атрибутов для заключительного диагноза
+            var hasInitialColumn = element.Attribute(XName.Get("initialIcfValueColumnName", XmlNamespaces.Editor)) != null;
+            var hasCurrentColumn = element.Attribute(XName.Get("currentIcfValueColumnName", XmlNamespaces.Editor)) != null;
+
+            if (hasInitialColumn && hasCurrentColumn)
+                return FooterItemNames.IcfFinal;
+
+            return FooterItemNames.IcfRecurrent;
         }
 
         private SectionItem ParseSection(XElement element)
@@ -365,23 +381,48 @@ namespace XmlGeneratorNew.Services
                         writer.WriteEndElement();
                     }
                     break;
+
                 case FooterItemNames.Diagnosis:
                     writer.WriteStartElement("e", "diagnosisSelection", XmlNamespaces.Editor);
                     writer.WriteEndElement();
                     break;
+
+                case FooterItemNames.IcfInitial:
+                    writer.WriteStartElement("e", "icfSectionInitial", XmlNamespaces.Editor);
+                    writer.WriteAttributeString("e", "emptySectionMessage", null, "Функциональный/реабилитационный диагноз не указан");
+                    writer.WriteEndElement();
+                    break;
+
+                case FooterItemNames.IcfRecurrent:
+                    writer.WriteStartElement("e", "icfSectionRecurrent", XmlNamespaces.Editor);
+                    writer.WriteAttributeString("e", "emptySectionMessage", null, "Функциональный/реабилитационный диагноз не изменен");
+                    writer.WriteEndElement();
+                    break;
+
+                case FooterItemNames.IcfFinal:
+                    writer.WriteStartElement("e", "icfSectionRecurrent", XmlNamespaces.Editor);
+                    writer.WriteAttributeString("e", "emptySectionMessage", null, "Функциональный/реабилитационный диагноз не изменен");
+                    writer.WriteAttributeString("e", "initialIcfValueColumnName", null, "Исходно");
+                    writer.WriteAttributeString("e", "currentIcfValueColumnName", null, "Заключительно");
+                    writer.WriteEndElement();
+                    break;
+
                 case FooterItemNames.Assignments:
                     writer.WriteStartElement("e", "assignmentsView", XmlNamespaces.Editor);
                     writer.WriteEndElement();
                     break;
+
                 case FooterItemNames.TreatmentActions:
                     writer.WriteStartElement("e", "treatmentActions", XmlNamespaces.Editor);
                     writer.WriteEndElement();
                     break;
+
                 case FooterItemNames.Attachments:
                     writer.WriteStartElement("e", "attachments", XmlNamespaces.Editor);
                     writer.WriteEndElement();
                     break;
             }
         }
+
     }
 }

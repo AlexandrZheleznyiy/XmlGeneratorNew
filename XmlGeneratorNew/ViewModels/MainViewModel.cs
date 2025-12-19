@@ -477,15 +477,42 @@ namespace XmlGeneratorNew.ViewModels
 
         private async void ResetAll()
         {
-            var result = MessageBox.Show("Очистить всё?", "Сброс", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var result = MessageBox.Show(
+                "Очистить всё? Это сбросит дерево элементов, настройки типов, блоков и имя шаблона.",
+                "Сброс",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
             if (result == MessageBoxResult.Yes)
             {
+                // Очищаем дерево элементов
                 RootItems.Clear();
                 FooterItems.Clear();
                 SelectedItem = null;
-                DeleteCommand.NotifyCanExecuteChanged();
+
+                // Сбрасываем имя шаблона
+                TemplateName = string.Empty;
+
+                // Сбрасываем настройки типов
+                _typeSettings = new TypeSettingsViewModel();
+
+                // Сбрасываем настройки блоков
+                _blocksSettings = new BlocksSettingsViewModel();
+
+                // Обновляем футер на основе сброшенных настроек
                 UpdateFooterItemsFromSettings();
+
+                // Уведомляем команды
+                DeleteCommand.NotifyCanExecuteChanged();
+
+                // Сохраняем пустой черновик
                 await SaveDraftAsync();
+
+                MessageBox.Show(
+                    "Все данные успешно сброшены.",
+                    "Сброс завершён",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
             }
         }
 
@@ -603,18 +630,34 @@ namespace XmlGeneratorNew.ViewModels
         {
             var newFooterItems = new List<string>();
 
+            // Диагнозы
             if (_blocksSettings.IsDiagnosis)
                 newFooterItems.Add(FooterItemNames.Diagnosis);
+
+            if (_blocksSettings.IsIcfInitial)
+                newFooterItems.Add(FooterItemNames.IcfInitial);
+
+            if (_blocksSettings.IsIcfRecurrent)
+                newFooterItems.Add(FooterItemNames.IcfRecurrent);
+
+            if (_blocksSettings.IsIcfFinal)
+                newFooterItems.Add(FooterItemNames.IcfFinal);
+
+            // Лечение
             if (_blocksSettings.IsAssignments)
                 newFooterItems.Add(FooterItemNames.Assignments);
+
             if (_blocksSettings.IsTreatmentActions)
                 newFooterItems.Add(FooterItemNames.TreatmentActions);
+
             if (_blocksSettings.IsAttachments)
                 newFooterItems.Add(FooterItemNames.Attachments);
 
+            // Заключение из настроек типов
             if (_typeSettings.IsConsultation || _typeSettings.IsLaboratory || _typeSettings.IsInstrumental)
                 newFooterItems.Add(FooterItemNames.Conclusion);
 
+            // Обновляем коллекцию FooterItems
             if (!FooterItems.SequenceEqual(newFooterItems))
             {
                 FooterItems.Clear();
@@ -624,6 +667,7 @@ namespace XmlGeneratorNew.ViewModels
                 }
             }
         }
+
 
         #endregion
 

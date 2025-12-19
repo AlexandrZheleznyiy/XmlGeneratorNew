@@ -2,30 +2,30 @@
 
 namespace XmlGeneratorNew.ViewModels
 {
+    /// <summary>
+    /// ViewModel для настроек блоков документа
+    /// </summary>
     public partial class BlocksSettingsViewModel : ObservableObject
     {
         [ObservableProperty]
-        private bool _isDiagnosis = false;
+        private bool isDiagnosis;
 
         [ObservableProperty]
-        private bool _isAssignments = false;
+        private bool isIcfInitial;
 
         [ObservableProperty]
-        private bool _isTreatmentActions = false;
+        private bool isIcfRecurrent;
 
         [ObservableProperty]
-        private bool _isAttachments = false;
+        private bool isIcfFinal;
 
-        public BlocksSettingsViewModel(
-            bool isDiagnosis = false,
-            bool isAssignments = false,
-            bool isTreatmentActions = false,
-            bool isAttachments = false)
-        {
-            IsDiagnosis = isDiagnosis;
-            IsAssignments = isAssignments;
-            IsTreatmentActions = isTreatmentActions;
-            IsAttachments = isAttachments;
-        }
+        [ObservableProperty]
+        private bool isAssignments;
+
+        [ObservableProperty]
+        private bool isTreatmentActions;
+
+        [ObservableProperty]
+        private bool isAttachments;
     }
 }

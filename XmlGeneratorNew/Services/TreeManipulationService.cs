@@ -138,10 +138,14 @@ namespace XmlGeneratorNew.Services
         public bool IsFooterString(string str)
         {
             return str == FooterItemNames.Diagnosis ||
+                   str == FooterItemNames.IcfInitial ||
+                   str == FooterItemNames.IcfRecurrent ||
+                   str == FooterItemNames.IcfFinal ||
                    str == FooterItemNames.Assignments ||
                    str == FooterItemNames.TreatmentActions ||
                    str == FooterItemNames.Attachments ||
                    str == FooterItemNames.Conclusion;
         }
+
     }
 }
