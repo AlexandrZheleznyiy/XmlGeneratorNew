@@ -4,7 +4,7 @@
         Title="Блоки шаблона" SizeToContent="WidthAndHeight" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
     <StackPanel Margin="20" MinWidth="320">
         <TextBlock Text="Выберите блоки:" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
-        <CheckBox Content="Диагнозы" IsChecked="{Binding IsDiagnosis, Mode=TwoWay}" Margin="0,5"/>
+        <CheckBox Content="Диагнозы МКБ" IsChecked="{Binding IsDiagnosis, Mode=TwoWay}" Margin="0,5"/>
         <CheckBox Content="Назначения" IsChecked="{Binding IsAssignments, Mode=TwoWay}" Margin="0,5"/>
         <CheckBox Content="Лечебные действия" IsChecked="{Binding IsTreatmentActions, Mode=TwoWay}" Margin="0,5"/>
         <CheckBox Content="Вложения" IsChecked="{Binding IsAttachments, Mode=TwoWay}" Margin="0,5"/>

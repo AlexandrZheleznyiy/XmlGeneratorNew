@@ -350,7 +350,7 @@ namespace XmlGeneratorNew.ViewModels
             // Добавляем в порядке, который вы хотите видеть по умолчанию
             // Или в том порядке, в котором они были ранее, если сохранять состояние
             if (_blocksSettings.IsDiagnosis)
-                newFooterItems.Add("Диагнозы");
+                newFooterItems.Add("Диагнозы МКБ");
             if (_blocksSettings.IsAssignments)
                 newFooterItems.Add("Назначения");
             if (_blocksSettings.IsTreatmentActions)
@@ -846,7 +846,7 @@ namespace XmlGeneratorNew.ViewModels
                         rootItems.Add("Заключение"); // Добавляем как строку
                         break;
                     case "diagnosisSelection":
-                        rootItems.Add("Диагнозы");
+                        rootItems.Add("Диагнозы МКБ");
                         break;
                     case "assignmentsView":
                         rootItems.Add("Назначения");
@@ -1063,7 +1063,7 @@ namespace XmlGeneratorNew.ViewModels
                         writer.WriteEndElement();
                     }
                     break;
-                case "Диагнозы":
+                case "Диагнозы МКБ":
                     writer.WriteStartElement("e", "diagnosisSelection", "http://www.sanatorium-is.ru/editor");
                     writer.WriteEndElement();
                     break;
@@ -1333,7 +1333,7 @@ namespace XmlGeneratorNew.ViewModels
         // --- Проверка на строки футера ---
         private bool IsFooterString(string str)
         {
-            return str == "Диагнозы" || str == "Назначения" || str == "Лечебные действия" || str == "Вложения" || str == "Заключение";
+            return str == "Диагнозы МКБ" || str == "Назначения" || str == "Лечебные действия" || str == "Вложения" || str == "Заключение";
         }
 
         public void HandleDrop(object draggedItem, object? targetItem)
