@@ -224,11 +224,19 @@ namespace XmlGeneratorNew.ViewModels
                     {
                         case "section":
                             var s = JsonConvert.DeserializeObject<SectionItem>(dto.Json);
-                            if (s != null) RootItems.Add(s);
+                            if (s != null)
+                            {
+                                RebuildChildren(s); // ← ДОБАВЛЕНО
+                                RootItems.Add(s);
+                            }
                             break;
                         case "group":
                             var g = JsonConvert.DeserializeObject<GroupItem>(dto.Json);
-                            if (g != null) RootItems.Add(g);
+                            if (g != null)
+                            {
+                                RebuildChildren(g); // ← ДОБАВЛЕНО
+                                RootItems.Add(g);
+                            }
                             break;
                         case "property":
                             var p = JsonConvert.DeserializeObject<PropertyItem>(dto.Json);
@@ -258,6 +266,35 @@ namespace XmlGeneratorNew.ViewModels
                 System.Diagnostics.Debug.WriteLine($"Ошибка загрузки черновика: {ex.Message}");
                 return false;
             }
+        }
+        /// <summary>
+        /// Восстанавливает коллекцию Children для секции
+        /// </summary>
+        private void RebuildChildren(SectionItem section)
+        {
+            section.Children.Clear();
+            foreach (var g in section.Groups)
+            {
+                section.Children.Add(g);
+                RebuildChildren(g); // Рекурсивно восстанавливаем вложенные группы
+            }
+            foreach (var p in section.Properties)
+                section.Children.Add(p);
+        }
+
+        /// <summary>
+        /// Восстанавливает коллекцию Children для группы
+        /// </summary>
+        private void RebuildChildren(GroupItem group)
+        {
+            group.Children.Clear();
+            foreach (var g in group.Groups)
+            {
+                group.Children.Add(g);
+                RebuildChildren(g); // Рекурсивно восстанавливаем вложенные группы
+            }
+            foreach (var p in group.Properties)
+                group.Children.Add(p);
         }
 
         /// <summary>
