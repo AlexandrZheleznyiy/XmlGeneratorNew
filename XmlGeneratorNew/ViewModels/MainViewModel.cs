@@ -534,11 +534,17 @@ namespace XmlGeneratorNew.ViewModels
                     _groupIndex = 1;
                     _propertyIndex = 1;
 
-                    var (rootItems, templateName) = _xmlService.LoadFromFile(openFileDialog.FileName);
+                    var (rootItems, templateName, typeSettings, blockSettings) = _xmlService.LoadFromFile(openFileDialog.FileName);
 
                     RootItems.Clear();
                     FooterItems.Clear();
 
+                    // Применяем загруженные настройки
+                    TemplateName = templateName;
+                    _typeSettings = typeSettings;
+                    _blocksSettings = blockSettings;
+
+                    // Разделяем элементы на основные и футер
                     foreach (var item in rootItems)
                     {
                         if (item is string strItem && _treeService.IsFooterString(strItem))
@@ -547,10 +553,15 @@ namespace XmlGeneratorNew.ViewModels
                             RootItems.Add(item);
                     }
 
-                    TemplateName = templateName;
+                    // Обновляем футер на основе загруженных настроек
                     UpdateFooterItemsFromSettings();
 
-                    MessageBox.Show("XML успешно загружен.", "Загрузка XML", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(
+                        $"XML успешно загружен.\n\nТип документа: {GetDocumentTypeDescription()}\nБлоки: {GetBlocksDescription()}",
+                        "Загрузка XML",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
                     await SaveDraftAsync();
                 }
                 catch (Exception ex)
@@ -558,6 +569,34 @@ namespace XmlGeneratorNew.ViewModels
                     MessageBox.Show($"Ошибка загрузки XML: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+        }
+        /// <summary>
+        /// Получает описание типа документа для отображения
+        /// </summary>
+        private string GetDocumentTypeDescription()
+        {
+            var types = new List<string>();
+            if (_typeSettings.IsConsultation) types.Add("Консультация");
+            if (_typeSettings.IsInstrumental) types.Add("Инструментальный");
+            if (_typeSettings.IsLaboratory) types.Add("Лабораторный");
+
+            return types.Count > 0 ? string.Join(", ", types) : "Не определён";
+        }
+        /// <summary>
+        /// Получает описание выбранных блоков для отображения
+        /// </summary>
+        private string GetBlocksDescription()
+        {
+            var blocks = new List<string>();
+            if (_blocksSettings.IsDiagnosis) blocks.Add("МКБ");
+            if (_blocksSettings.IsIcfInitial) blocks.Add("МКФ-первичный");
+            if (_blocksSettings.IsIcfRecurrent) blocks.Add("МКФ-повторный");
+            if (_blocksSettings.IsIcfFinal) blocks.Add("МКФ-заключительный");
+            if (_blocksSettings.IsAssignments) blocks.Add("Назначения");
+            if (_blocksSettings.IsTreatmentActions) blocks.Add("Лечебные действия");
+            if (_blocksSettings.IsAttachments) blocks.Add("Вложения");
+
+            return blocks.Count > 0 ? string.Join(", ", blocks) : "Не выбраны";
         }
 
         private void SaveXml()

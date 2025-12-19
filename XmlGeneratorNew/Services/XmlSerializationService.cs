@@ -22,7 +22,7 @@ namespace XmlGeneratorNew.Services
         /// <summary>
         /// Загружает XML файл и преобразует в модель данных
         /// </summary>
-        public (ObservableCollection<object> RootItems, string TemplateName) LoadFromFile(string filePath)
+        public (ObservableCollection<object> RootItems, string TemplateName, TypeSettingsViewModel TypeSettings, BlocksSettingsViewModel BlockSettings) LoadFromFile(string filePath)
         {
             _groupIndex = 1;
             _propertyIndex = 1;
@@ -36,6 +36,10 @@ namespace XmlGeneratorNew.Services
 
             string templateName = (string?)root.Attribute("name") ?? "";
 
+            // Определяем настройки типов и блоков из содержимого XML
+            var typeSettings = DetectTypeSettings(root);
+            var blockSettings = DetectBlockSettings(root);
+
             foreach (var element in root.Elements())
             {
                 var item = ParseElement(element);
@@ -43,7 +47,75 @@ namespace XmlGeneratorNew.Services
                     rootItems.Add(item);
             }
 
-            return (rootItems, templateName);
+            return (rootItems, templateName, typeSettings, blockSettings);
+        }
+        /// <summary>
+        /// Определяет настройки типа документа из XML
+        /// </summary>
+        private TypeSettingsViewModel DetectTypeSettings(XElement root)
+        {
+            var settings = new TypeSettingsViewModel();
+
+            foreach (var element in root.Descendants())
+            {
+                switch (element.Name.LocalName)
+                {
+                    case "consultantDefaultConclusion":
+                        settings.IsConsultation = true;
+                        break;
+                    case "instrumentalProbeConclusion":
+                        settings.IsInstrumental = true;
+                        break;
+                    case "labProbeConclusion":
+                    case "probeGenericResultSelection":
+                        settings.IsLaboratory = true;
+                        break;
+                }
+            }
+
+            return settings;
+        }
+
+        /// <summary>
+        /// Определяет настройки блоков из XML
+        /// </summary>
+        private BlocksSettingsViewModel DetectBlockSettings(XElement root)
+        {
+            var settings = new BlocksSettingsViewModel();
+
+            foreach (var element in root.Descendants())
+            {
+                switch (element.Name.LocalName)
+                {
+                    case "diagnosisSelection":
+                        settings.IsDiagnosis = true;
+                        break;
+                    case "icfSectionInitial":
+                        settings.IsIcfInitial = true;
+                        break;
+                    case "icfSectionRecurrent":
+                        // Проверяем, это повторный или заключительный
+                        var hasInitialColumn = element.Attribute(XName.Get("initialIcfValueColumnName", XmlNamespaces.Editor)) != null;
+                        var hasCurrentColumn = element.Attribute(XName.Get("currentIcfValueColumnName", XmlNamespaces.Editor)) != null;
+
+                        if (hasInitialColumn && hasCurrentColumn)
+                            settings.IsIcfFinal = true;
+                        else
+                            settings.IsIcfRecurrent = true;
+                        break;
+                    case "assignmentsView":
+                        settings.IsAssignments = true;
+                        break;
+                    case "treatmentActions":
+                        settings.IsTreatmentActions = true;
+                        break;
+                    case "attachments":
+                        settings.IsAttachments = true;
+                        break;
+                }
+            }
+
+            return settings;
         }
 
         /// <summary>
