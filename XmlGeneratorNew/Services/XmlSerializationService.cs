@@ -180,14 +180,14 @@ namespace XmlGeneratorNew.Services
 
                         // Добавляем инструкции как комментарий
                         new XComment(@"
-                        =============================================================
-                        ИНСТРУКЦИЯ ПО ИСПОЛЬЗОВАНИЮ:
-                        1. Изучите нераспознанные теги ниже
-                        2. Добавьте их обработку в XmlSerializationService.ParseElement()
-                        3. При необходимости создайте новые модели данных
-                        4. Обновите константы в FooterItemNames.cs
-                        =============================================================
-                        "),
+=============================================================
+ИНСТРУКЦИЯ ПО ИСПОЛЬЗОВАНИЮ:
+1. Изучите нераспознанные теги ниже
+2. Добавьте их обработку в XmlSerializationService.ParseElement()
+3. При необходимости создайте новые модели данных
+4. Обновите константы в FooterItemNames.cs
+=============================================================
+"),
 
                         // Добавляем каждый нераспознанный элемент
                         from kvp in _unparsedElements.OrderBy(x => x.Key)
@@ -207,9 +207,9 @@ namespace XmlGeneratorNew.Services
                                 )
                                 : null,
 
-                            // Добавляем полный XML как CDATA
+                            // Добавляем полный XML без CDATA - парсим и вставляем как XElement
                             new XElement("FullXml",
-                                new XCData(element.FullXml)
+                                TryParseXml(element.FullXml)
                             )
                         )
                     )
@@ -236,6 +236,22 @@ namespace XmlGeneratorNew.Services
             {
                 System.Diagnostics.Debug.WriteLine($"[SaveUnparsed] ❌ Ошибка сохранения: {ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"[SaveUnparsed] Stack trace: {ex.StackTrace}");
+            }
+        }
+
+        /// <summary>
+        /// Пытается распарсить XML строку в XElement, если не получается - возвращает как текст
+        /// </summary>
+        private object TryParseXml(string xmlString)
+        {
+            try
+            {
+                return XElement.Parse(xmlString);
+            }
+            catch
+            {
+                // Если не удалось распарсить, возвращаем как обычный текст
+                return xmlString;
             }
         }
 
