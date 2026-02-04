@@ -621,16 +621,16 @@ namespace XmlGeneratorNew.Services
                     if (typeSettings.IsConsultation)
                     {
                         writer.WriteStartElement("e", "consultantDefaultConclusion", XmlNamespaces.Editor);
-                        writer.WriteAttributeString("autoSuggestName", "specC");
+                        writer.WriteAttributeString("e", "autoSuggestName", XmlNamespaces.Editor, "specC");
                         writer.WriteEndElement();
                     }
                     else if (typeSettings.IsInstrumental)
                     {
                         writer.WriteStartElement("e", "instrumentalProbeConclusion", XmlNamespaces.Editor);
-                        writer.WriteAttributeString("noPathologyCounter", "True");
-                        writer.WriteAttributeString("autoSuggestName", "ИИ.заключение");
+                        writer.WriteAttributeString("e", "noPathologyCounter", XmlNamespaces.Editor, "True");
+                        writer.WriteAttributeString("e", "autoSuggestName", XmlNamespaces.Editor, "ИИ.заключение");
                         writer.WriteStartElement("e", "recommendations", XmlNamespaces.Editor);
-                        writer.WriteAttributeString("autoSuggestName", "ИИ.рекомендации");
+                        writer.WriteAttributeString("e", "autoSuggestName", XmlNamespaces.Editor, "ИИ.рекомендации");
                         writer.WriteEndElement();
                         writer.WriteEndElement();
                     }
@@ -639,7 +639,7 @@ namespace XmlGeneratorNew.Services
                         writer.WriteStartElement("e", "probeGenericResultSelection", XmlNamespaces.Editor);
                         writer.WriteEndElement();
                         writer.WriteStartElement("e", "labProbeConclusion", XmlNamespaces.Editor);
-                        writer.WriteAttributeString("autoSuggestName", "labProbeC");
+                        writer.WriteAttributeString("e", "autoSuggestName", XmlNamespaces.Editor, "labProbeC");
                         writer.WriteEndElement();
                     }
                     break;
