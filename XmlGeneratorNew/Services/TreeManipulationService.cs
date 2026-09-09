@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using XmlGeneratorNew.Constants;
 using XmlGeneratorNew.Models;
@@ -18,21 +19,9 @@ namespace XmlGeneratorNew.Services
             if (rootItems.Contains(item))
                 return null;
 
-            foreach (var section in rootItems.OfType<SectionItem>())
+            foreach (var root in rootItems)
             {
-                if (section.Groups.Contains(item) || section.Properties.Contains(item))
-                    return section;
-
-                var parent = FindParentInGroup(item, section.Groups);
-                if (parent != null) return parent;
-            }
-
-            foreach (var group in rootItems.OfType<GroupItem>())
-            {
-                if (group.Groups.Contains(item) || group.Properties.Contains(item))
-                    return group;
-
-                var parent = FindParentInGroup(item, group.Groups);
+                var parent = FindParentRecursive(item, root);
                 if (parent != null) return parent;
             }
 
@@ -40,18 +29,32 @@ namespace XmlGeneratorNew.Services
         }
 
         /// <summary>
-        /// Рекурсивный поиск родителя в группах
+        /// Рекурсивный поиск родителя в контейнере
         /// </summary>
-        private GroupItem? FindParentInGroup(object item, ObservableCollection<GroupItem> groups)
+        private object? FindParentRecursive(object item, object container)
         {
-            foreach (var group in groups)
+            IEnumerable<object>? children = container switch
             {
-                if (group.Groups.Contains(item) || group.Properties.Contains(item))
-                    return group;
+                SectionItem s => s.Children,
+                GroupItem g => g.Children,
+                OneOfItem o => o.Children,
+                TableItem t => t.Children,
+                RowItem r => r.Children,
+                CellItem c => c.Children,
+                _ => null
+            };
 
-                var found = FindParentInGroup(item, group.Groups);
+            if (children == null) return null;
+
+            foreach (var child in children)
+            {
+                if (child == item)
+                    return container;
+
+                var found = FindParentRecursive(item, child);
                 if (found != null) return found;
             }
+
             return null;
         }
 
@@ -74,38 +77,20 @@ namespace XmlGeneratorNew.Services
                 return true;
             }
 
-            // Обработка PropertyItem
-            if (item is PropertyItem prop)
+            // Поиск родителя и удаление из него
+            var parent = FindParent(item, rootItems);
+            if (parent != null)
             {
-                var parent = FindParent(item, rootItems);
-                if (parent is SectionItem section)
+                return parent switch
                 {
-                    return section.RemoveProperty(prop);
-                }
-                else if (parent is GroupItem group)
-                {
-                    return group.RemoveChild(prop);
-                }
-            }
-
-            // Обработка GroupItem
-            if (item is GroupItem groupItem)
-            {
-                var parent = FindParent(item, rootItems);
-                if (parent is SectionItem section)
-                {
-                    return section.RemoveGroup(groupItem);
-                }
-                else if (parent is GroupItem group)
-                {
-                    return group.RemoveChild(groupItem);
-                }
-            }
-
-            // Обработка SectionItem
-            if (item is SectionItem sectionItem)
-            {
-                return rootItems.Remove(sectionItem);
+                    SectionItem section => section.RemoveChild(item),
+                    GroupItem group => group.RemoveChild(item),
+                    OneOfItem oneOf => oneOf.RemoveChild(item),
+                    TableItem table => table.RemoveChild(item),
+                    RowItem row => row.RemoveChild(item),
+                    CellItem cell => cell.RemoveChild(item),
+                    _ => false
+                };
             }
 
             return false;
@@ -146,6 +131,5 @@ namespace XmlGeneratorNew.Services
                    str == FooterItemNames.Attachments ||
                    str == FooterItemNames.Conclusion;
         }
-
     }
 }

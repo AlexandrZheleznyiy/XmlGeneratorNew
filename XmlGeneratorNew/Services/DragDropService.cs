@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using XmlGeneratorNew.Constants;
 using XmlGeneratorNew.Models;
 
@@ -45,15 +45,12 @@ namespace XmlGeneratorNew.Services
                 return;
             }
 
-            // Запрет вложения группы в саму себя
-            if (draggedItem is GroupItem draggedGroup && targetItem is GroupItem targetGroup)
+            // Запрет вложения элемента в самого себя или своих потомков
+            if (targetItem != null && _treeService.IsDescendantOf(targetItem, draggedItem, rootItems))
             {
-                if (_treeService.IsDescendantOf(targetGroup, draggedGroup, rootItems))
-                {
-                    System.Diagnostics.Debug.WriteLine(
-                        $"[DragDrop] Drop rejected: Cannot drop group '{draggedGroup.Name}' into itself or its descendant.");
-                    return;
-                }
+                System.Diagnostics.Debug.WriteLine(
+                    "[DragDrop] Drop rejected: Cannot drop item into itself or its descendant.");
+                return;
             }
 
             // Удаляем draggedItem из текущего места
@@ -111,28 +108,91 @@ namespace XmlGeneratorNew.Services
             switch (targetItem)
             {
                 case SectionItem section:
-                    if (draggedItem is GroupItem g)
-                        section.AddGroup(g);
-                    else if (draggedItem is PropertyItem p)
-                        section.AddProperty(p);
+                    AddChildToContainer(section, draggedItem);
                     break;
 
                 case GroupItem group:
-                    if (draggedItem is GroupItem gr)
-                        group.AddGroup(gr);
-                    else if (draggedItem is PropertyItem p)
-                        group.AddProperty(p);
+                    AddChildToContainer(group, draggedItem);
                     break;
 
-                case PropertyItem _:
-                    var parent = _treeService.FindParent(targetItem, rootItems);
-                    InsertAfter(parent, targetItem, draggedItem);
+                case OneOfItem oneOf when draggedItem is PropertyItem p:
+                    oneOf.AddProperty(p);
+                    break;
+
+                case TableItem table when draggedItem is RowItem r:
+                    table.AddRow(r);
+                    break;
+
+                case RowItem row when draggedItem is CellItem c:
+                    row.AddCell(c);
+                    break;
+
+                case CellItem cell:
+                    AddChildToContainer(cell, draggedItem);
                     break;
 
                 default:
-                    rootItems.Add(draggedItem);
+                    var parent = _treeService.FindParent(targetItem, rootItems);
+                    if (parent != null)
+                        InsertAfter(parent, targetItem, draggedItem);
+                    else
+                        rootItems.Add(draggedItem);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Добавляет элемент в контейнер в зависимости от типов
+        /// </summary>
+        private void AddChildToContainer(object container, object newItem)
+        {
+            switch (container)
+            {
+                case SectionItem s:
+                    if (newItem is GroupItem sg) s.AddGroup(sg);
+                    else if (newItem is PropertyItem sp) s.AddProperty(sp);
+                    else if (newItem is OneOfItem so) s.AddOneOf(so);
+                    else if (newItem is TableItem st) s.AddTable(st);
+                    break;
+
+                case GroupItem gr:
+                    if (newItem is GroupItem gg) gr.AddGroup(gg);
+                    else if (newItem is PropertyItem gp) gr.AddProperty(gp);
+                    else if (newItem is OneOfItem go) gr.AddOneOf(go);
+                    else if (newItem is TableItem gt) gr.AddTable(gt);
+                    break;
+
+                case OneOfItem oneOf:
+                    if (newItem is PropertyItem op) oneOf.AddProperty(op);
+                    break;
+
+                case TableItem table:
+                    if (newItem is RowItem tr) table.AddRow(tr);
+                    break;
+
+                case RowItem row:
+                    if (newItem is CellItem rc) row.AddCell(rc);
+                    break;
+
+                case CellItem cell:
+                    if (newItem is PropertyItem cp) cell.AddProperty(cp);
+                    else if (newItem is GroupItem cg) cell.AddGroup(cg);
+                    break;
+            }
+        }
+
+        private ObservableCollection<object>? GetChildren(object container)
+        {
+            return container switch
+            {
+                SectionItem s => s.Children,
+                GroupItem g => g.Children,
+                OneOfItem o => o.Children,
+                TableItem t => t.Children,
+                RowItem r => r.Children,
+                CellItem c => c.Children,
+                _ => null
+            };
         }
 
         /// <summary>
@@ -143,47 +203,11 @@ namespace XmlGeneratorNew.Services
             if (parent == null)
                 return;
 
-            if (parent is SectionItem section)
+            AddChildToContainer(parent, newItem);
+            var children = GetChildren(parent);
+            if (children != null)
             {
-                InsertIntoSection(section, reference, newItem);
-            }
-            else if (parent is GroupItem group)
-            {
-                InsertIntoGroup(group, reference, newItem);
-            }
-        }
-
-        /// <summary>
-        /// Вставляет элемент в секцию после reference
-        /// </summary>
-        private void InsertIntoSection(SectionItem section, object reference, object newItem)
-        {
-            if (newItem is GroupItem newGroup)
-            {
-                section.AddGroup(newGroup);
-                ReorderInChildren(section.Children, reference, newGroup);
-            }
-            else if (newItem is PropertyItem newProp)
-            {
-                section.AddProperty(newProp);
-                ReorderInChildren(section.Children, reference, newProp);
-            }
-        }
-
-        /// <summary>
-        /// Вставляет элемент в группу после reference
-        /// </summary>
-        private void InsertIntoGroup(GroupItem group, object reference, object newItem)
-        {
-            if (newItem is GroupItem newSubGroup)
-            {
-                group.AddGroup(newSubGroup);
-                ReorderInChildren(group.Children, reference, newSubGroup);
-            }
-            else if (newItem is PropertyItem newProp)
-            {
-                group.AddProperty(newProp);
-                ReorderInChildren(group.Children, reference, newProp);
+                ReorderInChildren(children, reference, newItem);
             }
         }
 

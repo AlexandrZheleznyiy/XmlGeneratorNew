@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using Newtonsoft.Json;
@@ -64,6 +64,10 @@ namespace XmlGeneratorNew.ViewModels
         public IRelayCommand AddSectionCommand { get; }
         public IRelayCommand AddGroupCommand { get; }
         public IRelayCommand AddPropertyCommand { get; }
+        public IRelayCommand AddOneOfCommand { get; }
+        public IRelayCommand AddTableCommand { get; }
+        public IRelayCommand AddRowCommand { get; }
+        public IRelayCommand AddCellCommand { get; }
         public IRelayCommand DeleteCommand { get; }
         public IRelayCommand ResetCommand { get; }
         public IRelayCommand LoadCommand { get; }
@@ -97,6 +101,10 @@ namespace XmlGeneratorNew.ViewModels
             AddGroupCommand = new RelayCommand(AddGroup);
             AddPropertyCommand = new RelayCommand(AddProperty);
             AddSectionCommand = new RelayCommand(AddSection);
+            AddOneOfCommand = new RelayCommand(AddOneOf);
+            AddTableCommand = new RelayCommand(AddTable);
+            AddRowCommand = new RelayCommand(AddRow);
+            AddCellCommand = new RelayCommand(AddCell);
             DeleteCommand = new RelayCommand(DeleteSelected, CanDelete);
             ResetCommand = new RelayCommand(ResetAll);
             LoadCommand = new RelayCommand(LoadXml);
@@ -132,11 +140,19 @@ namespace XmlGeneratorNew.ViewModels
             if (oldValue is SectionItem oldSection) oldSection.IsSelected = false;
             else if (oldValue is GroupItem oldGroup) oldGroup.IsSelected = false;
             else if (oldValue is PropertyItem oldProp) oldProp.IsSelected = false;
+            else if (oldValue is OneOfItem oldOneOf) oldOneOf.IsSelected = false;
+            else if (oldValue is TableItem oldTable) oldTable.IsSelected = false;
+            else if (oldValue is RowItem oldRow) oldRow.IsSelected = false;
+            else if (oldValue is CellItem oldCell) oldCell.IsSelected = false;
 
             // Устанавливаем выделение нового элемента
             if (newValue is SectionItem newSection) newSection.IsSelected = true;
             else if (newValue is GroupItem newGroup) newGroup.IsSelected = true;
             else if (newValue is PropertyItem newProp) newProp.IsSelected = true;
+            else if (newValue is OneOfItem newOneOf) newOneOf.IsSelected = true;
+            else if (newValue is TableItem newTable) newTable.IsSelected = true;
+            else if (newValue is RowItem newRow) newRow.IsSelected = true;
+            else if (newValue is CellItem newCell) newCell.IsSelected = true;
         }
 
         private void FooterItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -181,6 +197,16 @@ namespace XmlGeneratorNew.ViewModels
                         {
                             ItemType = "property",
                             Json = JsonConvert.SerializeObject(p)
+                        },
+                        OneOfItem o => new DraftItemDto
+                        {
+                            ItemType = "oneOf",
+                            Json = JsonConvert.SerializeObject(o)
+                        },
+                        TableItem t => new DraftItemDto
+                        {
+                            ItemType = "table",
+                            Json = JsonConvert.SerializeObject(t)
                         },
                         string footer when _treeService.IsFooterString(footer) => new DraftItemDto
                         {
@@ -227,7 +253,7 @@ namespace XmlGeneratorNew.ViewModels
                             var s = JsonConvert.DeserializeObject<SectionItem>(dto.Json);
                             if (s != null)
                             {
-                                RebuildChildren(s); // ← ДОБАВЛЕНО
+                                RebuildChildren(s);
                                 RootItems.Add(s);
                             }
                             break;
@@ -235,13 +261,29 @@ namespace XmlGeneratorNew.ViewModels
                             var g = JsonConvert.DeserializeObject<GroupItem>(dto.Json);
                             if (g != null)
                             {
-                                RebuildChildren(g); // ← ДОБАВЛЕНО
+                                RebuildChildren(g);
                                 RootItems.Add(g);
                             }
                             break;
                         case "property":
                             var p = JsonConvert.DeserializeObject<PropertyItem>(dto.Json);
                             if (p != null) RootItems.Add(p);
+                            break;
+                        case "oneOf":
+                            var o = JsonConvert.DeserializeObject<OneOfItem>(dto.Json);
+                            if (o != null)
+                            {
+                                RebuildChildren(o);
+                                RootItems.Add(o);
+                            }
+                            break;
+                        case "table":
+                            var t = JsonConvert.DeserializeObject<TableItem>(dto.Json);
+                            if (t != null)
+                            {
+                                RebuildChildren(t);
+                                RootItems.Add(t);
+                            }
                             break;
                         case "footer":
                             var f = JsonConvert.DeserializeObject<string>(dto.Json);
@@ -277,10 +319,20 @@ namespace XmlGeneratorNew.ViewModels
             foreach (var g in section.Groups)
             {
                 section.Children.Add(g);
-                RebuildChildren(g); // Рекурсивно восстанавливаем вложенные группы
+                RebuildChildren(g);
             }
             foreach (var p in section.Properties)
                 section.Children.Add(p);
+            foreach (var o in section.OneOfs)
+            {
+                section.Children.Add(o);
+                RebuildChildren(o);
+            }
+            foreach (var t in section.Tables)
+            {
+                section.Children.Add(t);
+                RebuildChildren(t);
+            }
         }
 
         /// <summary>
@@ -292,10 +344,59 @@ namespace XmlGeneratorNew.ViewModels
             foreach (var g in group.Groups)
             {
                 group.Children.Add(g);
-                RebuildChildren(g); // Рекурсивно восстанавливаем вложенные группы
+                RebuildChildren(g);
             }
             foreach (var p in group.Properties)
                 group.Children.Add(p);
+            foreach (var o in group.OneOfs)
+            {
+                group.Children.Add(o);
+                RebuildChildren(o);
+            }
+            foreach (var t in group.Tables)
+            {
+                group.Children.Add(t);
+                RebuildChildren(t);
+            }
+        }
+
+        private void RebuildChildren(OneOfItem oneOf)
+        {
+            oneOf.Children.Clear();
+            foreach (var p in oneOf.Properties)
+                oneOf.Children.Add(p);
+        }
+
+        private void RebuildChildren(TableItem table)
+        {
+            table.Children.Clear();
+            foreach (var r in table.Rows)
+            {
+                table.Children.Add(r);
+                RebuildChildren(r);
+            }
+        }
+
+        private void RebuildChildren(RowItem row)
+        {
+            row.Children.Clear();
+            foreach (var c in row.Cells)
+            {
+                row.Children.Add(c);
+                RebuildChildren(c);
+            }
+        }
+
+        private void RebuildChildren(CellItem cell)
+        {
+            cell.Children.Clear();
+            foreach (var p in cell.Properties)
+                cell.Children.Add(p);
+            foreach (var g in cell.Groups)
+            {
+                cell.Children.Add(g);
+                RebuildChildren(g);
+            }
         }
 
         /// <summary>
@@ -373,25 +474,25 @@ namespace XmlGeneratorNew.ViewModels
 
         private async void AddGroup()
         {
+            var newGroup = new GroupItem { Name = $"Группа {_groupIndex++}", IsExpanded = true, IsSelected = true };
             if (SelectedItem is SectionItem selectedSection)
             {
-                var newGroup = new GroupItem { Name = $"Группа {_groupIndex++}", IsExpanded = true, IsSelected = true };
                 selectedSection.AddGroup(newGroup);
-                SelectedItem = newGroup;
             }
             else if (SelectedItem is GroupItem selectedGroup)
             {
-                var newSubGroup = new GroupItem { Name = $"Группа {_groupIndex++}", IsExpanded = true, IsSelected = true };
-                selectedGroup.AddGroup(newSubGroup);
-                SelectedItem = newSubGroup;
+                selectedGroup.AddGroup(newGroup);
+            }
+            else if (SelectedItem is CellItem selectedCell)
+            {
+                selectedCell.AddGroup(newGroup);
             }
             else
             {
-                var newGroup = new GroupItem { Name = $"Группа {_groupIndex++}", IsExpanded = true, IsSelected = true };
                 RootItems.Add(newGroup);
-                SelectedItem = newGroup;
             }
 
+            SelectedItem = newGroup;
             await SaveDraftAsync();
         }
 
@@ -407,6 +508,14 @@ namespace XmlGeneratorNew.ViewModels
             {
                 section.AddProperty(prop);
             }
+            else if (SelectedItem is OneOfItem oneOf)
+            {
+                oneOf.AddProperty(prop);
+            }
+            else if (SelectedItem is CellItem cell)
+            {
+                cell.AddProperty(prop);
+            }
             else
             {
                 RootItems.Add(prop);
@@ -414,6 +523,56 @@ namespace XmlGeneratorNew.ViewModels
 
             SelectedItem = prop;
             await SaveDraftAsync();
+        }
+
+        private async void AddOneOf()
+        {
+            var oneOf = new OneOfItem { Name = $"OneOf_{_groupIndex++}", IsExpanded = true, IsSelected = true };
+            if (SelectedItem is SectionItem section)
+                section.AddOneOf(oneOf);
+            else if (SelectedItem is GroupItem group)
+                group.AddOneOf(oneOf);
+            else
+                RootItems.Add(oneOf);
+
+            SelectedItem = oneOf;
+            await SaveDraftAsync();
+        }
+
+        private async void AddTable()
+        {
+            var table = new TableItem { IsExpanded = true, IsSelected = true };
+            if (SelectedItem is SectionItem section)
+                section.AddTable(table);
+            else if (SelectedItem is GroupItem group)
+                group.AddTable(table);
+            else
+                RootItems.Add(table);
+
+            SelectedItem = table;
+            await SaveDraftAsync();
+        }
+
+        private async void AddRow()
+        {
+            if (SelectedItem is TableItem table)
+            {
+                var row = new RowItem { RowIndex = table.Rows.Count.ToString(), IsExpanded = true, IsSelected = true };
+                table.AddRow(row);
+                SelectedItem = row;
+                await SaveDraftAsync();
+            }
+        }
+
+        private async void AddCell()
+        {
+            if (SelectedItem is RowItem row)
+            {
+                var cell = new CellItem { Col = row.Cells.Count.ToString(), IsExpanded = true, IsSelected = true };
+                row.AddCell(cell);
+                SelectedItem = cell;
+                await SaveDraftAsync();
+            }
         }
 
         private void AddSectionToRoot()
@@ -709,6 +868,10 @@ namespace XmlGeneratorNew.ViewModels
                 SectionItem section => _duplicationService.DuplicateSection(section),
                 GroupItem group => _duplicationService.DuplicateGroup(group),
                 PropertyItem prop => _duplicationService.DuplicateProperty(prop),
+                OneOfItem oneOf => _duplicationService.DuplicateOneOf(oneOf),
+                TableItem table => _duplicationService.DuplicateTable(table),
+                RowItem row => _duplicationService.DuplicateRow(row),
+                CellItem cell => _duplicationService.DuplicateCell(cell),
                 _ => null
             };
 
@@ -735,11 +898,32 @@ namespace XmlGeneratorNew.ViewModels
             {
                 if (newItem is GroupItem g) section.AddGroup(g);
                 else if (newItem is PropertyItem p) section.AddProperty(p);
+                else if (newItem is OneOfItem o) section.AddOneOf(o);
+                else if (newItem is TableItem t) section.AddTable(t);
             }
             else if (parent is GroupItem group)
             {
                 if (newItem is GroupItem g) group.AddGroup(g);
                 else if (newItem is PropertyItem p) group.AddProperty(p);
+                else if (newItem is OneOfItem o) group.AddOneOf(o);
+                else if (newItem is TableItem t) group.AddTable(t);
+            }
+            else if (parent is OneOfItem oneOf && newItem is PropertyItem prop)
+            {
+                oneOf.AddProperty(prop);
+            }
+            else if (parent is TableItem table && newItem is RowItem r)
+            {
+                table.AddRow(r);
+            }
+            else if (parent is RowItem row && newItem is CellItem c)
+            {
+                row.AddCell(c);
+            }
+            else if (parent is CellItem cell)
+            {
+                if (newItem is PropertyItem cp) cell.AddProperty(cp);
+                else if (newItem is GroupItem cg) cell.AddGroup(cg);
             }
         }
 

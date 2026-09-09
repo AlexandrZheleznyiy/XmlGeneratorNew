@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace XmlGeneratorNew.Models
 {
@@ -49,6 +49,9 @@ namespace XmlGeneratorNew.Models
 
         [ObservableProperty]
         private PropertyType type = PropertyType.String;
+
+        [ObservableProperty]
+        private string visibleWhen = "";
 
         [ObservableProperty]
         private string semd = "";

@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -81,6 +81,14 @@ namespace XmlGeneratorNew.Services
                                 var g = JsonConvert.DeserializeObject<GroupItem>(dto.Json);
                                 if (g != null) RebuildChildren(g);
                                 break;
+                            case "oneOf":
+                                var o = JsonConvert.DeserializeObject<OneOfItem>(dto.Json);
+                                if (o != null) RebuildChildren(o);
+                                break;
+                            case "table":
+                                var t = JsonConvert.DeserializeObject<TableItem>(dto.Json);
+                                if (t != null) RebuildChildren(t);
+                                break;
                         }
                     }
                 }
@@ -132,6 +140,16 @@ namespace XmlGeneratorNew.Services
             }
             foreach (var p in section.Properties)
                 section.Children.Add(p);
+            foreach (var o in section.OneOfs)
+            {
+                section.Children.Add(o);
+                RebuildChildren(o);
+            }
+            foreach (var t in section.Tables)
+            {
+                section.Children.Add(t);
+                RebuildChildren(t);
+            }
         }
 
         /// <summary>
@@ -147,6 +165,67 @@ namespace XmlGeneratorNew.Services
             }
             foreach (var p in group.Properties)
                 group.Children.Add(p);
+            foreach (var o in group.OneOfs)
+            {
+                group.Children.Add(o);
+                RebuildChildren(o);
+            }
+            foreach (var t in group.Tables)
+            {
+                group.Children.Add(t);
+                RebuildChildren(t);
+            }
+        }
+
+        /// <summary>
+        /// Восстанавливает коллекцию Children для oneOf
+        /// </summary>
+        private void RebuildChildren(OneOfItem oneOf)
+        {
+            oneOf.Children.Clear();
+            foreach (var p in oneOf.Properties)
+                oneOf.Children.Add(p);
+        }
+
+        /// <summary>
+        /// Восстанавливает коллекцию Children для таблицы
+        /// </summary>
+        private void RebuildChildren(TableItem table)
+        {
+            table.Children.Clear();
+            foreach (var r in table.Rows)
+            {
+                table.Children.Add(r);
+                RebuildChildren(r);
+            }
+        }
+
+        /// <summary>
+        /// Восстанавливает коллекцию Children для строки таблицы
+        /// </summary>
+        private void RebuildChildren(RowItem row)
+        {
+            row.Children.Clear();
+            foreach (var c in row.Cells)
+            {
+                row.Children.Add(c);
+                RebuildChildren(c);
+            }
+        }
+
+        /// <summary>
+        /// Восстанавливает коллекцию Children для ячейки таблицы
+        /// </summary>
+        private void RebuildChildren(CellItem cell)
+        {
+            cell.Children.Clear();
+            foreach (var p in cell.Properties)
+                cell.Children.Add(p);
+            foreach (var g in cell.Groups)
+            {
+                cell.Children.Add(g);
+                RebuildChildren(g);
+            }
         }
     }
 }

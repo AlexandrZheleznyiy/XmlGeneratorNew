@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -74,6 +74,8 @@ namespace XmlGeneratorNew.Services
                 "section" => ParseSection(element),
                 "group" => ParseGroup(element),
                 "property" => ParseProperty(element),
+                "oneOf" => ParseOneOf(element),
+                "table" => ParseTable(element),
                 "consultantDefaultConclusion" => FooterItemNames.Conclusion,
                 "instrumentalProbeConclusion" => FooterItemNames.Conclusion,
                 "labProbeConclusion" => FooterItemNames.Conclusion,
@@ -403,16 +405,24 @@ namespace XmlGeneratorNew.Services
                 Uid = (string?)element.Attribute("uid") ?? ""
             };
 
-            foreach (var groupElem in element.Elements("group"))
+            // Итерируем ВСЕ дочерние элементы, чтобы не терять oneOf и table
+            foreach (var child in element.Elements())
             {
-                var group = ParseGroup(groupElem);
-                section.AddGroup(group);
-            }
-
-            foreach (var propElem in element.Elements("property"))
-            {
-                var prop = ParseProperty(propElem);
-                section.AddProperty(prop);
+                switch (child.Name.LocalName)
+                {
+                    case "group":
+                        section.AddGroup(ParseGroup(child));
+                        break;
+                    case "property":
+                        section.AddProperty(ParseProperty(child));
+                        break;
+                    case "oneOf":
+                        section.AddOneOf(ParseOneOf(child));
+                        break;
+                    case "table":
+                        section.AddTable(ParseTable(child));
+                        break;
+                }
             }
 
             return section;
@@ -440,6 +450,8 @@ namespace XmlGeneratorNew.Services
                 OdGroupMode = (string?)element.Attribute(XName.Get("groupMode", XmlNamespaces.OfficeDocument)) ?? "",
                 ECaptionStyle = (string?)element.Attribute(XName.Get("captionStyle", XmlNamespaces.Editor)) ?? "",
                 OdGroupStyle = (string?)element.Attribute(XName.Get("groupStyle", XmlNamespaces.OfficeDocument)) ?? "",
+                VisibleWhen = (string?)element.Attribute(XName.Get("visibleWhen", XmlNamespaces.Editor)) ?? "",
+                OdIgnore = ((string?)element.Attribute(XName.Get("ignore", XmlNamespaces.OfficeDocument)))?.ToLowerInvariant() == "true",
                 Semd = (string?)element.Attribute("semd") ?? "",
                 Uid = (string?)element.Attribute("uid") ?? ""
             };
@@ -457,6 +469,12 @@ namespace XmlGeneratorNew.Services
                         break;
                     case "property":
                         group.AddProperty(ParseProperty(child));
+                        break;
+                    case "oneOf":
+                        group.AddOneOf(ParseOneOf(child));
+                        break;
+                    case "table":
+                        group.AddTable(ParseTable(child));
                         break;
                 }
             }
@@ -486,6 +504,7 @@ namespace XmlGeneratorNew.Services
                 MinLines = (string?)element.Attribute(XName.Get("MinLines", XmlNamespaces.Xaml)) ?? "",
                 AutoSuggestName = (string?)element.Attribute(XName.Get("autoSuggestName", XmlNamespaces.Editor)) ?? "",
                 Value = (string?)element.Attribute("value") ?? "",
+                VisibleWhen = (string?)element.Attribute(XName.Get("visibleWhen", XmlNamespaces.Editor)) ?? "",
                 Semd = (string?)element.Attribute("semd") ?? "",
                 Uid = (string?)element.Attribute("uid") ?? ""
             };
@@ -501,6 +520,137 @@ namespace XmlGeneratorNew.Services
             return prop;
         }
 
+        /// <summary>
+        /// Парсит элемент <oneOf> — радиогруппу
+        /// </summary>
+        private OneOfItem ParseOneOf(XElement element)
+        {
+            string caption = (string?)element.Attribute(XName.Get("caption", XmlNamespaces.Editor)) ?? "";
+            string nameAttr = (string?)element.Attribute("name") ?? "";
+
+            var oneOf = new OneOfItem
+            {
+                Name = !string.IsNullOrEmpty(nameAttr) ? nameAttr :
+                       (!string.IsNullOrEmpty(caption) ?
+                       string.Join(" ", Regex.Split(caption, @"[\s\(\)]+")
+                           .Where(s => !string.IsNullOrEmpty(s)).Take(3)) :
+                       $"OneOf_{_groupIndex++}"),
+                Caption = caption,
+                OdCaption = (string?)element.Attribute(XName.Get("caption", XmlNamespaces.OfficeDocument)) ?? "",
+                Orientation = (string?)element.Attribute(XName.Get("orientation", XmlNamespaces.Editor)) ?? "",
+                Separator = (string?)element.Attribute(XName.Get("separator", XmlNamespaces.Editor)) ?? "",
+                Suffix = (string?)element.Attribute(XName.Get("suffix", XmlNamespaces.Editor)) ?? "",
+                Prefix = (string?)element.Attribute(XName.Get("prefix", XmlNamespaces.Editor)) ?? "",
+                OdSeparator = (string?)element.Attribute(XName.Get("separator", XmlNamespaces.OfficeDocument)) ?? "",
+                OdSuffix = (string?)element.Attribute(XName.Get("suffix", XmlNamespaces.OfficeDocument)) ?? "",
+                OdPrefix = (string?)element.Attribute(XName.Get("prefix", XmlNamespaces.OfficeDocument)) ?? "",
+                OdGroupMode = (string?)element.Attribute(XName.Get("groupMode", XmlNamespaces.OfficeDocument)) ?? "",
+                OdIgnore = ((string?)element.Attribute(XName.Get("ignore", XmlNamespaces.OfficeDocument)))?.ToLowerInvariant() == "true",
+                OdSentenceStart = ((string?)element.Attribute(XName.Get("sentenceStart", XmlNamespaces.OfficeDocument)))?.ToLowerInvariant() == "true",
+                OdUnderlined = ((string?)element.Attribute(XName.Get("underlined", XmlNamespaces.OfficeDocument)))?.ToLowerInvariant() == "true",
+                VisibleWhen = (string?)element.Attribute(XName.Get("visibleWhen", XmlNamespaces.Editor)) ?? "",
+                Value = (string?)element.Attribute("value") ?? "",
+                Type = (string?)element.Attribute("type") ?? "string",
+                Semd = (string?)element.Attribute("semd") ?? "",
+                Uid = (string?)element.Attribute("uid") ?? ""
+            };
+
+            foreach (var child in element.Elements())
+            {
+                switch (child.Name.LocalName)
+                {
+                    case "property":
+                        oneOf.AddProperty(ParseProperty(child));
+                        break;
+                }
+            }
+
+            return oneOf;
+        }
+
+        /// <summary>
+        /// Парсит элемент <table>
+        /// </summary>
+        private TableItem ParseTable(XElement element)
+        {
+            var table = new TableItem
+            {
+                EStyle = (string?)element.Attribute(XName.Get("style", XmlNamespaces.Editor)) ?? "",
+                ETableStretch = (string?)element.Attribute(XName.Get("tableStretch", XmlNamespaces.Editor)) ?? "",
+                OdTableStretch = (string?)element.Attribute(XName.Get("tableStretch", XmlNamespaces.OfficeDocument)) ?? "",
+                Uid = (string?)element.Attribute("uid") ?? ""
+            };
+
+            foreach (var child in element.Elements())
+            {
+                if (child.Name.LocalName == "row")
+                {
+                    table.AddRow(ParseRow(child));
+                }
+            }
+
+            return table;
+        }
+
+        /// <summary>
+        /// Парсит элемент <row>
+        /// </summary>
+        private RowItem ParseRow(XElement element)
+        {
+            var row = new RowItem
+            {
+                RowIndex = (string?)element.Attribute("row") ?? "",
+                OdJustification = (string?)element.Attribute(XName.Get("justification", XmlNamespaces.OfficeDocument)) ?? "",
+                Uid = (string?)element.Attribute("uid") ?? ""
+            };
+
+            foreach (var child in element.Elements())
+            {
+                if (child.Name.LocalName == "cell")
+                {
+                    row.AddCell(ParseCell(child));
+                }
+            }
+
+            return row;
+        }
+
+        /// <summary>
+        /// Парсит элемент <cell>
+        /// </summary>
+        private CellItem ParseCell(XElement element)
+        {
+            var cell = new CellItem
+            {
+                Col = (string?)element.Attribute("col") ?? "",
+                ColSpan = (string?)element.Attribute("colSpan") ?? "",
+                RowSpan = (string?)element.Attribute("rowSpan") ?? "",
+                Text = (string?)element.Attribute("text") ?? "",
+                Type = (string?)element.Attribute("type") ?? "",
+                ELayout = (string?)element.Attribute(XName.Get("layout", XmlNamespaces.Editor)) ?? "",
+                EStyle = (string?)element.Attribute(XName.Get("style", XmlNamespaces.Editor)) ?? "",
+                OdCaption = (string?)element.Attribute(XName.Get("caption", XmlNamespaces.OfficeDocument)) ?? "",
+                OdCellWidth = (string?)element.Attribute(XName.Get("cellWidth", XmlNamespaces.OfficeDocument)) ?? "",
+                OdJustification = (string?)element.Attribute(XName.Get("justification", XmlNamespaces.OfficeDocument)) ?? "",
+                Uid = (string?)element.Attribute("uid") ?? ""
+            };
+
+            foreach (var child in element.Elements())
+            {
+                switch (child.Name.LocalName)
+                {
+                    case "property":
+                        cell.AddProperty(ParseProperty(child));
+                        break;
+                    case "group":
+                        cell.AddGroup(ParseGroup(child));
+                        break;
+                }
+            }
+
+            return cell;
+        }
+
         private void WriteItem(XmlWriter writer, object item)
         {
             switch (item)
@@ -513,6 +663,12 @@ namespace XmlGeneratorNew.Services
                     break;
                 case PropertyItem prop:
                     WriteProperty(writer, prop);
+                    break;
+                case OneOfItem oneOf:
+                    WriteOneOf(writer, oneOf);
+                    break;
+                case TableItem table:
+                    WriteTable(writer, table);
                     break;
             }
         }
@@ -541,6 +697,8 @@ namespace XmlGeneratorNew.Services
         private void WriteGroup(XmlWriter writer, GroupItem group)
         {
             writer.WriteStartElement("group");
+            if (!string.IsNullOrEmpty(group.Name))
+                writer.WriteAttributeString("name", group.Name);
             if (!string.IsNullOrEmpty(group.Caption))
                 writer.WriteAttributeString("e", "caption", null, group.Caption);
             if (!string.IsNullOrEmpty(group.OdCaption))
@@ -561,6 +719,10 @@ namespace XmlGeneratorNew.Services
                 writer.WriteAttributeString("e", "captionStyle", null, "GroupHeader");
             if (group.OdGroupStyleIsNewParagraphBoldHeader)
                 writer.WriteAttributeString("od", "groupStyle", null, "NewParagraphBoldHeader");
+            if (!string.IsNullOrEmpty(group.VisibleWhen))
+                writer.WriteAttributeString("e", "visibleWhen", null, group.VisibleWhen);
+            if (group.OdIgnore)
+                writer.WriteAttributeString("od", "ignore", null, "true");
             if (!string.IsNullOrEmpty(group.Semd))
                 writer.WriteAttributeString("semd", null, group.Semd);
             if (!string.IsNullOrEmpty(group.Uid))
@@ -577,6 +739,8 @@ namespace XmlGeneratorNew.Services
         private void WriteProperty(XmlWriter writer, PropertyItem prop)
         {
             writer.WriteStartElement("property");
+            if (!string.IsNullOrEmpty(prop.Name))
+                writer.WriteAttributeString("name", prop.Name);
             if (!string.IsNullOrEmpty(prop.Caption))
                 writer.WriteAttributeString("e", "caption", null, prop.Caption);
             if (!string.IsNullOrEmpty(prop.OdCaption))
@@ -605,10 +769,146 @@ namespace XmlGeneratorNew.Services
                 writer.WriteAttributeString("xaml", "MinLines", null, prop.MinLines);
             if (!string.IsNullOrEmpty(prop.AutoSuggestName))
                 writer.WriteAttributeString("e", "autoSuggestName", null, prop.AutoSuggestName);
+            if (!string.IsNullOrEmpty(prop.VisibleWhen))
+                writer.WriteAttributeString("e", "visibleWhen", null, prop.VisibleWhen);
             if (!string.IsNullOrEmpty(prop.Semd))
                 writer.WriteAttributeString("semd", null, prop.Semd);
             if (!string.IsNullOrEmpty(prop.Uid))
                 writer.WriteAttributeString("uid", prop.Uid);
+
+            writer.WriteEndElement();
+        }
+
+        /// <summary>
+        /// Записывает элемент <oneOf> в XML
+        /// </summary>
+        private void WriteOneOf(XmlWriter writer, OneOfItem oneOf)
+        {
+            writer.WriteStartElement("oneOf");
+            if (!string.IsNullOrEmpty(oneOf.Name))
+                writer.WriteAttributeString("name", oneOf.Name);
+            if (!string.IsNullOrEmpty(oneOf.Caption))
+                writer.WriteAttributeString("e", "caption", null, oneOf.Caption);
+            if (!string.IsNullOrEmpty(oneOf.OdCaption))
+                writer.WriteAttributeString("od", "caption", null, oneOf.OdCaption);
+            if (!string.IsNullOrEmpty(oneOf.Orientation))
+                writer.WriteAttributeString("e", "orientation", null, oneOf.Orientation);
+            if (!string.IsNullOrEmpty(oneOf.Separator))
+                writer.WriteAttributeString("e", "separator", null, oneOf.Separator);
+            if (!string.IsNullOrEmpty(oneOf.Suffix))
+                writer.WriteAttributeString("e", "suffix", null, oneOf.Suffix);
+            if (!string.IsNullOrEmpty(oneOf.Prefix))
+                writer.WriteAttributeString("e", "prefix", null, oneOf.Prefix);
+            if (!string.IsNullOrEmpty(oneOf.OdSeparator))
+                writer.WriteAttributeString("od", "separator", null, oneOf.OdSeparator);
+            if (!string.IsNullOrEmpty(oneOf.OdSuffix))
+                writer.WriteAttributeString("od", "suffix", null, oneOf.OdSuffix);
+            if (!string.IsNullOrEmpty(oneOf.OdPrefix))
+                writer.WriteAttributeString("od", "prefix", null, oneOf.OdPrefix);
+            if (!string.IsNullOrEmpty(oneOf.OdGroupMode))
+                writer.WriteAttributeString("od", "groupMode", null, oneOf.OdGroupMode);
+            if (oneOf.OdIgnore)
+                writer.WriteAttributeString("od", "ignore", null, "true");
+            if (oneOf.OdSentenceStart)
+                writer.WriteAttributeString("od", "sentenceStart", null, "true");
+            if (oneOf.OdUnderlined)
+                writer.WriteAttributeString("od", "underlined", null, "true");
+            if (!string.IsNullOrEmpty(oneOf.VisibleWhen))
+                writer.WriteAttributeString("e", "visibleWhen", null, oneOf.VisibleWhen);
+            if (!string.IsNullOrEmpty(oneOf.Type))
+                writer.WriteAttributeString("type", oneOf.Type);
+            if (!string.IsNullOrEmpty(oneOf.Value))
+                writer.WriteAttributeString("value", oneOf.Value);
+            if (!string.IsNullOrEmpty(oneOf.Semd))
+                writer.WriteAttributeString("semd", null, oneOf.Semd);
+            if (!string.IsNullOrEmpty(oneOf.Uid))
+                writer.WriteAttributeString("uid", oneOf.Uid);
+
+            foreach (var child in oneOf.Children)
+            {
+                WriteItem(writer, child);
+            }
+
+            writer.WriteEndElement();
+        }
+
+        /// <summary>
+        /// Записывает элемент <table> в XML
+        /// </summary>
+        private void WriteTable(XmlWriter writer, TableItem table)
+        {
+            writer.WriteStartElement("table");
+            if (!string.IsNullOrEmpty(table.EStyle))
+                writer.WriteAttributeString("e", "style", null, table.EStyle);
+            if (!string.IsNullOrEmpty(table.ETableStretch))
+                writer.WriteAttributeString("e", "tableStretch", null, table.ETableStretch);
+            if (!string.IsNullOrEmpty(table.OdTableStretch))
+                writer.WriteAttributeString("od", "tableStretch", null, table.OdTableStretch);
+            if (!string.IsNullOrEmpty(table.Uid))
+                writer.WriteAttributeString("uid", table.Uid);
+
+            foreach (var row in table.Rows)
+            {
+                WriteRow(writer, row);
+            }
+
+            writer.WriteEndElement();
+        }
+
+        /// <summary>
+        /// Записывает элемент <row> в XML
+        /// </summary>
+        private void WriteRow(XmlWriter writer, RowItem row)
+        {
+            writer.WriteStartElement("row");
+            if (!string.IsNullOrEmpty(row.RowIndex))
+                writer.WriteAttributeString("row", row.RowIndex);
+            if (!string.IsNullOrEmpty(row.OdJustification))
+                writer.WriteAttributeString("od", "justification", null, row.OdJustification);
+            if (!string.IsNullOrEmpty(row.Uid))
+                writer.WriteAttributeString("uid", row.Uid);
+
+            foreach (var cell in row.Cells)
+            {
+                WriteCell(writer, cell);
+            }
+
+            writer.WriteEndElement();
+        }
+
+        /// <summary>
+        /// Записывает элемент <cell> в XML
+        /// </summary>
+        private void WriteCell(XmlWriter writer, CellItem cell)
+        {
+            writer.WriteStartElement("cell");
+            if (!string.IsNullOrEmpty(cell.Col))
+                writer.WriteAttributeString("col", cell.Col);
+            if (!string.IsNullOrEmpty(cell.ColSpan))
+                writer.WriteAttributeString("colSpan", cell.ColSpan);
+            if (!string.IsNullOrEmpty(cell.RowSpan))
+                writer.WriteAttributeString("rowSpan", cell.RowSpan);
+            if (!string.IsNullOrEmpty(cell.Text))
+                writer.WriteAttributeString("text", cell.Text);
+            if (!string.IsNullOrEmpty(cell.Type))
+                writer.WriteAttributeString("type", cell.Type);
+            if (!string.IsNullOrEmpty(cell.ELayout))
+                writer.WriteAttributeString("e", "layout", null, cell.ELayout);
+            if (!string.IsNullOrEmpty(cell.EStyle))
+                writer.WriteAttributeString("e", "style", null, cell.EStyle);
+            if (!string.IsNullOrEmpty(cell.OdCaption))
+                writer.WriteAttributeString("od", "caption", null, cell.OdCaption);
+            if (!string.IsNullOrEmpty(cell.OdCellWidth))
+                writer.WriteAttributeString("od", "cellWidth", null, cell.OdCellWidth);
+            if (!string.IsNullOrEmpty(cell.OdJustification))
+                writer.WriteAttributeString("od", "justification", null, cell.OdJustification);
+            if (!string.IsNullOrEmpty(cell.Uid))
+                writer.WriteAttributeString("uid", cell.Uid);
+
+            foreach (var child in cell.Children)
+            {
+                WriteItem(writer, child);
+            }
 
             writer.WriteEndElement();
         }
