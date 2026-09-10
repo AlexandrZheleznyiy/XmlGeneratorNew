@@ -29,6 +29,12 @@ namespace XmlGeneratorNew.ViewModels
         private string templateName = "";
 
         [ObservableProperty]
+        private string breadcrumbPath = "Шаблон";
+
+        [ObservableProperty]
+        private string searchText = "";
+
+        [ObservableProperty]
         private object? selectedItem;
 
         public ObservableCollection<object> RootItems { get; } = new();
@@ -153,6 +159,46 @@ namespace XmlGeneratorNew.ViewModels
             else if (newValue is TableItem newTable) newTable.IsSelected = true;
             else if (newValue is RowItem newRow) newRow.IsSelected = true;
             else if (newValue is CellItem newCell) newCell.IsSelected = true;
+
+            UpdateBreadcrumbs(newValue);
+        }
+
+        partial void OnTemplateNameChanged(string value)
+        {
+            UpdateBreadcrumbs(SelectedItem);
+        }
+
+        public void UpdateBreadcrumbs(object? selected)
+        {
+            if (selected == null)
+            {
+                BreadcrumbPath = string.IsNullOrWhiteSpace(TemplateName) ? "Шаблон (новый)" : TemplateName;
+                return;
+            }
+
+            var parts = new List<string>();
+            object? current = selected;
+            while (current != null)
+            {
+                string name = current switch
+                {
+                    SectionItem s => !string.IsNullOrEmpty(s.Name) ? s.Name : (!string.IsNullOrEmpty(s.Title) ? s.Title : "Секция"),
+                    GroupItem g => !string.IsNullOrEmpty(g.Caption) ? g.Caption : (!string.IsNullOrEmpty(g.Name) ? g.Name : "Группа"),
+                    OneOfItem o => !string.IsNullOrEmpty(o.Caption) ? o.Caption : (!string.IsNullOrEmpty(o.Name) ? o.Name : "OneOf"),
+                    TableItem t => "Таблица",
+                    RowItem r => $"Строка {r.RowIndex}",
+                    CellItem c => $"Ячейка col={c.Col}",
+                    PropertyItem p => !string.IsNullOrEmpty(p.Caption) ? p.Caption : (!string.IsNullOrEmpty(p.Name) ? p.Name : "Свойство"),
+                    string str => str,
+                    _ => current.GetType().Name
+                };
+                parts.Insert(0, name);
+                current = _treeService.FindParent(current, RootItems);
+            }
+
+            string rootName = string.IsNullOrWhiteSpace(TemplateName) ? "Шаблон" : TemplateName;
+            parts.Insert(0, rootName);
+            BreadcrumbPath = string.Join("  ›  ", parts);
         }
 
         private void FooterItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

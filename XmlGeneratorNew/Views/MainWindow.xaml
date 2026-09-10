@@ -5,26 +5,160 @@
         xmlns:converters="clr-namespace:XmlGeneratorNew.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="XmlGeneratorNew" Height="900" Width="1200"
-        Background="#fafafa"
-        FontFamily="Segoe UI, Segoe UI Symbol, Segoe WP"
-        SnapsToDevicePixels="True"
-        xmlns:system="clr-namespace:System;assembly=mscorlib">
+        Title="XmlGeneratorNew — Fluent Studio (Windows 11)" Height="920" Width="1380"
+        MinHeight="700" MinWidth="1050"
+        Background="{StaticResource FluentBgWindow}"
+        FontFamily="Segoe UI Variable, Segoe UI, -apple-system, BlinkMacSystemFont, sans-serif"
+        SnapsToDevicePixels="True">
+
     <Window.Resources>
+        <!-- Конвертеры -->
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <converters:TreeViewItemLevelToVisibilityConverter x:Key="LevelToVisibilityConverter"/>
-        <converters:TreeViewItemLevelToMarginConverter x:Key="LevelToMarginConverter" Indent="5"/>
+        <converters:TreeViewItemLevelToMarginConverter x:Key="LevelToMarginConverter" Indent="8"/>
         <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
-        <!--  Стиль  TreeViewItem  с   линиями  -->
+
+        <!-- Палитра Fluent Studio -->
+        <SolidColorBrush x:Key="PrimaryAccent" Color="#005FB8"/>
+        <SolidColorBrush x:Key="PrimaryAccentHover" Color="#1975C5"/>
+        <SolidColorBrush x:Key="PrimaryAccentLight" Color="#EBF3FB"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#1C1C1E"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#5A5A60"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#8A8A90"/>
+        <SolidColorBrush x:Key="BorderLight" Color="#E2E2E6"/>
+        <SolidColorBrush x:Key="CardBackground" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="DangerColor" Color="#C42B1C"/>
+
+        <!-- Базовая кнопка WinUI 3 -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderLight}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="btnBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="btnBorder" Property="Background" Value="#F5F5F7"/>
+                                <Setter TargetName="btnBorder" Property="BorderBrush" Value="#C5C5CB"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="btnBorder" Property="Background" Value="#EAEAEF"/>
+                                <Setter TargetName="btnBorder" Property="BorderBrush" Value="{StaticResource PrimaryAccent}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Основная акцентная кнопка WinUI 3 (Primary Blue) -->
+        <Style x:Key="PrimaryButton" BasedOn="{StaticResource ModernButton}" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryAccent}"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryAccent}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="btnBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource PrimaryAccentHover}"/>
+                                <Setter TargetName="btnBorder" Property="BorderBrush" Value="{StaticResource PrimaryAccentHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="btnBorder" Property="Background" Value="#004F96"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Кнопка удаления (Danger Red) -->
+        <Style x:Key="DangerButton" BasedOn="{StaticResource ModernButton}" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource DangerColor}"/>
+            <Setter Property="BorderBrush" Value="#F8D7DA"/>
+            <Setter Property="Background" Value="#FDF2F2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="btnBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="btnBorder" Property="Background" Value="#FCE8E8"/>
+                                <Setter TargetName="btnBorder" Property="BorderBrush" Value="{StaticResource DangerColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="btnBorder" Property="Background" Value="#F8D7DA"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Кнопка чипа настроек WinUI 3 -->
+        <Style x:Key="ChipButton" BasedOn="{StaticResource ModernButton}" TargetType="Button">
+            <Setter Property="Background" Value="#F8F9FA"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderLight}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- Стиль TreeViewItem Fluent -->
         <Style x:Key="TreeViewItemWithLine" TargetType="TreeViewItem">
             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TreeViewItem">
-                        <StackPanel>
-                            <Border x:Name="HeaderHost" Background="Transparent" BorderBrush="Transparent" BorderThickness="1">
+                        <StackPanel Margin="0,1">
+                            <Border x:Name="HeaderHost"
+                                    Background="Transparent"
+                                    CornerRadius="5"
+                                    Padding="4,3"
+                                    Margin="0,1"
+                                    SnapsToDevicePixels="True">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
@@ -32,24 +166,21 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <!--  Вертикальная   линия  -->
+                                    <!-- Вертикальная линия -->
                                     <Border Grid.Column="0"
                                             Width="1"
-                                            Margin="0,0,0,0"
-                                            VerticalAlignment="Stretch"
-                                            Background="#E0E0E0"
+                                            Background="#E2E2E6"
                                             Visibility="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem}, 
                                                                  Converter={StaticResource LevelToVisibilityConverter}}"/>
-                                    <!--  Горизонтальная   линия  (" ножка ") -->
+                                    <!-- Горизонтальная линия -->
                                     <Border x:Name="PART_HorizontalLine"
                                             Grid.Column="1"
                                             Height="1"
-                                            Width="5"
-                                            Margin="0,0,0,0"
-                                            Background="#9E9E9E"
+                                            Width="6"
+                                            Background="#E2E2E6"
                                             VerticalAlignment="Center"/>
-                                    <!-- Expander -->
-                                    <Grid Grid.Column="2" Margin="0,0">
+                                    <!-- Expander Стрелочка -->
+                                    <Grid Grid.Column="2" Margin="2,0,4,0">
                                         <ToggleButton x:Name="Expander"
                                                       IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
                                                       ClickMode="Press"
@@ -61,16 +192,18 @@
                                                             <ControlTemplate TargetType="ToggleButton">
                                                                 <Grid Width="16" Height="16" Background="Transparent">
                                                                     <Path x:Name="ExpandPath"
-                                                                          Data="M 0 4 L 8 12 L 16 4 Z"
-                                                                          Stroke="#9E9E9E"
-                                                                          StrokeThickness="1.5"/>
+                                                                          Data="M 6 3 L 11 8 L 6 13 Z"
+                                                                          Fill="#707075"
+                                                                          HorizontalAlignment="Center"
+                                                                          VerticalAlignment="Center"/>
                                                                 </Grid>
                                                                 <ControlTemplate.Triggers>
                                                                     <Trigger Property="IsChecked" Value="True">
-                                                                        <Setter TargetName="ExpandPath" Property="Data" Value="M 4 0 L 12 8 L 4 16 Z"/>
+                                                                        <Setter TargetName="ExpandPath" Property="Data" Value="M 3 6 L 8 11 L 13 6 Z"/>
+                                                                        <Setter TargetName="ExpandPath" Property="Fill" Value="{StaticResource PrimaryAccent}"/>
                                                                     </Trigger>
                                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                                        <Setter TargetName="ExpandPath" Property="Stroke" Value="#2196F3"/>
+                                                                        <Setter TargetName="ExpandPath" Property="Fill" Value="{StaticResource PrimaryAccentHover}"/>
                                                                     </Trigger>
                                                                 </ControlTemplate.Triggers>
                                                             </ControlTemplate>
@@ -78,20 +211,19 @@
                                                     </Setter>
                                                     <Setter Property="Width" Value="16"/>
                                                     <Setter Property="Height" Value="16"/>
-                                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                    <Setter Property="Cursor" Value="Hand"/>
                                                 </Style>
                                             </ToggleButton.Style>
                                         </ToggleButton>
                                     </Grid>
-                                    <!--  Контент  -->
+                                    <!-- Контент заголовка узла -->
                                     <ContentPresenter Grid.Column="3"
                                                       x:Name="PART_Header"
                                                       ContentSource="Header"
                                                       VerticalAlignment="Center"/>
                                 </Grid>
                             </Border>
-                            <!--  Дочерние   элементы  -->
+                            <!-- Дочерние элементы -->
                             <ItemsPresenter x:Name="ItemsHost" Visibility="Collapsed"/>
                         </StackPanel>
                         <ControlTemplate.Triggers>
@@ -103,501 +235,960 @@
                                 <Setter TargetName="PART_HorizontalLine" Property="Visibility" Value="Collapsed"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="HeaderHost" Property="Background" Value="#e8edec"/>
+                                <Setter TargetName="HeaderHost" Property="Background" Value="{StaticResource FluentBgSelected}"/>
                             </Trigger>
-                            <Trigger Property="IsSelected" Value="False">
-                                <Setter TargetName="HeaderHost" Property="Background" Value="Transparent"/>
-                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="False"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="HeaderHost" Property="Background" Value="{StaticResource FluentBgHover}"/>
+                            </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Setter Property="Margin" Value="{Binding RelativeSource={RelativeSource Self}, Converter={StaticResource LevelToMarginConverter}}"/>
         </Style>
-        <!-- Шаблон для строк-футеров в основном дереве (если они там окажутся) -->
+
+        <!-- Шаблон для строк-футеров в основном дереве -->
         <DataTemplate DataType="{x:Type system:String}">
-            <TextBlock Text="{Binding}"
-                      Foreground="DarkSlateGray"
-                      FontSize="12" />
+            <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="2">
+                <TextBlock Text="{Binding}" Foreground="{StaticResource TextSecondary}" FontSize="12" FontWeight="SemiBold"/>
+            </Border>
         </DataTemplate>
     </Window.Resources>
-    <Grid Margin="16">
+
+    <!-- Главная сетка приложения (Windows 11 Fluent Studio) -->
+    <Grid Margin="16,12,16,12">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="35"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <!-- Для футера -->
-            <RowDefinition Height="Auto"/>
-            <!-- Для кнопок -->
-        </Grid.RowDefinitions><!-- Кнопки: Пространство имён / Тип / Блоки -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,5">
-            <Button Width="130" Height="20" Command="{Binding OpenNamespaceSettingsCommand}">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="Пространство имён" />
-                </StackPanel>
-            </Button>
-            <Button Width="100" Height="20" Margin="10,0,0,0" Command="{Binding OpenTypeSettingsCommand}">
-                <TextBlock Text="Тип" HorizontalAlignment="Center"/>
-            </Button>
-            <Button Width="100" Height="20" Margin="10,0,0,0" Command="{Binding OpenBlocksSettingsCommand}">
-                <TextBlock Text="Блоки" HorizontalAlignment="Center"/>
-            </Button>
-        </StackPanel>
-        <!-- Дерево и редактор -->
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="380"/>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <!--  Дерево  -->
-            <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="0" BorderBrush="#E0E0E0" BorderThickness="1">
-                <TreeView x:Name="MainTreeView" ItemsSource="{Binding RootItems}"
-                          SelectedItemChanged="TreeView_SelectedItemChanged"
-                          PreviewMouseLeftButtonDown="TreeView_PreviewMouseLeftButtonDown"
-                          MouseMove="TreeView_MouseMove"
-                          Drop="TreeView_Drop"
-                          DragOver="TreeView_DragOver"
-                          AllowDrop="True"
-                          KeyDown="TreeView_KeyDown"
-                          Background="Transparent" BorderThickness="0">
-                    <TreeView.InputBindings>
-                        <KeyBinding Key="D" Modifiers="Control" 
-                                    Command="{Binding DataContext.DuplicateCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
-                    </TreeView.InputBindings>
-                    <TreeView.ItemContainerStyle>
-                        <Style BasedOn="{StaticResource TreeViewItemWithLine}" TargetType="TreeViewItem">
-                        </Style>
-                    </TreeView.ItemContainerStyle>
-                    <TreeView.Resources>
-                        <HierarchicalDataTemplate DataType="{x:Type models:SectionItem}" ItemsSource="{Binding Children}">
-                            <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#2196F3" FontSize="15"/>
-                        </HierarchicalDataTemplate>
-                        <HierarchicalDataTemplate DataType="{x:Type models:GroupItem}" ItemsSource="{Binding Children}">
-                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="#212121"/>
-                        </HierarchicalDataTemplate>
-                        <HierarchicalDataTemplate DataType="{x:Type models:OneOfItem}" ItemsSource="{Binding Children}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="◉ " Foreground="#4CAF50" FontSize="13" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="#2E7D32"/>
-                            </StackPanel>
-                        </HierarchicalDataTemplate>
-                        <HierarchicalDataTemplate DataType="{x:Type models:TableItem}" ItemsSource="{Binding Children}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="▦ Таблица" FontWeight="Bold" FontSize="14" Foreground="#E65100"/>
-                            </StackPanel>
-                        </HierarchicalDataTemplate>
-                        <HierarchicalDataTemplate DataType="{x:Type models:RowItem}" ItemsSource="{Binding Children}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Строка " FontSize="13" Foreground="#E65100"/>
-                                <TextBlock Text="{Binding RowIndex}" FontSize="13" Foreground="#E65100" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </HierarchicalDataTemplate>
-                        <HierarchicalDataTemplate DataType="{x:Type models:CellItem}" ItemsSource="{Binding Children}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Ячейка col=" FontSize="12" Foreground="#795548"/>
-                                <TextBlock Text="{Binding Col}" FontSize="12" Foreground="#795548" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding Text, StringFormat=' ({0})'}" FontSize="12" Foreground="#757575"/>
-                            </StackPanel>
-                        </HierarchicalDataTemplate>
-                        <DataTemplate DataType="{x:Type models:PropertyItem}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding Name}" FontSize="13" Foreground="#212121"/>
-                                <TextBlock Text=" (" Margin="5,0,0,0" Foreground="#757575"/>
-                                <TextBlock Text="{Binding Type}" Foreground="#757575"/>
-                                <TextBlock Text=")" Foreground="#757575"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </TreeView.Resources>
-                </TreeView>
-            </Border>
-            <!--  Редактор  -->
-            <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="15" BorderBrush="#E0E0E0" BorderThickness="1">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0">
+            <RowDefinition Height="Auto"/> <!-- Шапка и команды -->
+            <RowDefinition Height="*"/>    <!-- Рабочая область: Дерево + Инспектор (Аккордеоны) -->
+            <RowDefinition Height="Auto"/> <!-- Футер-блоки -->
+            <RowDefinition Height="Auto"/> <!-- Нижняя строка состояния -->
+        </Grid.RowDefinitions>
+
+        <!-- ========================================================= -->
+        <!-- 1. ШАПКА И КОМАНДНАЯ ПАНЕЛЬ (Fluent CommandBar)           -->
+        <!-- ========================================================= -->
+        <Border Grid.Row="0" Background="{StaticResource CardBackground}" CornerRadius="10" Padding="14,12" Margin="0,0,0,12"
+                BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Верхняя строка шапки: Логотип, Хлебные крошки (Breadcrumbs), Кнопки действий -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Логотип приложения WinUI 3 -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <Border Background="{StaticResource PrimaryAccent}" CornerRadius="6" Width="30" Height="30" Margin="0,0,10,0">
+                            <TextBlock Text="XML" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="XmlGenerator Studio" FontWeight="Bold" FontSize="16" Foreground="{StaticResource FluentTextTitle}"/>
+                        </StackPanel>
+                        <Border Background="{StaticResource PrimaryAccentLight}" BorderBrush="{StaticResource PrimaryAccent}" BorderThickness="1" CornerRadius="4" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding TemplateName, TargetNullValue='Новый шаблон', FallbackValue='Новый шаблон'}"
+                                       Foreground="{StaticResource PrimaryAccent}" FontSize="11.5" FontWeight="SemiBold"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Хлебные крошки (Breadcrumbs) текущего пути -->
+                    <Border Grid.Column="1" Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource BorderLight}" BorderThickness="1"
+                            CornerRadius="6" Padding="10,6" Margin="0,0,16,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📍" Margin="0,0,6,0" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource PrimaryAccent}"/>
+                            <TextBlock Text="{Binding BreadcrumbPath}" Foreground="{StaticResource TextPrimary}"
+                                       FontSize="12.5" FontWeight="Medium" VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Основные команды: Загрузить / Сохранить / Черновик -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="📂 Загрузить XML" Command="{Binding LoadCommand}" Style="{StaticResource ModernButton}" Margin="0,0,6,0"/>
+                        <Button Content="💾 Сохранить XML" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,6,0"/>
+                        <Button Content="📝 Черновик" Command="{Binding SaveDraftCommand}" Style="{StaticResource ModernButton}" Margin="0,0,6,0"/>
+                        <Button Content="✕ Сброс" Command="{Binding ResetCommand}" Style="{StaticResource DangerButton}"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Нижняя строка шапки: Кнопки вызова модальных окон настроек -->
+                <Border Grid.Row="1" Margin="0,10,0,0" Padding="0,10,0,0" BorderBrush="{StaticResource BorderLight}" BorderThickness="0,1,0,0">
                     <Grid>
-                        <ContentControl Content="{Binding SelectedItem}">
-                            <ContentControl.Resources>
-                                <!-- Здесь шаблоны редактирования (оставь как есть) -->
-                                <DataTemplate DataType="{x:Type models:SectionItem}">
-                                    <StackPanel>
-                                        <TextBlock Text="Редактирование секции" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Код (code):"/>
-                                        <TextBox Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Имя (name):"/>
-                                        <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Заголовок (title):"/>
-                                        <TextBox Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="semd:"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <ComboBox SelectedValue="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                      SelectedValuePath="Content"
-                                                      Width="150"
-                                                      Margin="0,0,5,0">
-                                                <ComboBoxItem Content=""/>
-                                                <ComboBoxItem Content="DiseaseAnamnesis"/>
-                                                <ComboBoxItem Content="LifeAnamnesis"/>
-                                                <ComboBoxItem Content="ObjectiveState"/>
-                                            </ComboBox>
-                                            <TextBlock Text="(если пусто, будет использовано значение из поля ниже)" FontSize="10" Foreground="Gray" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                        <TextBox Text="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,10"/>
-                                        <TextBlock Text="uid:"/>
-                                        <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <WrapPanel Margin="0,10,0,0">
-                                            <Button Content="Добавить группу" Width="120" Margin="0,0,5,5"
-                                                    Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                            <Button Content="Добавить свойство" Width="120" Margin="0,0,5,5"
-                                                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                            <Button Content="Добавить OneOf" Width="120" Margin="0,0,5,5"
-                                                    Command="{Binding DataContext.AddOneOfCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                            <Button Content="Добавить таблицу" Width="130" Margin="0,0,0,5"
-                                                    Command="{Binding DataContext.AddTableCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                        </WrapPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                                <DataTemplate DataType="{x:Type models:GroupItem}">
-                                    <StackPanel>
-                                        <TextBlock Text="Редактирование группы" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Имя (для дерева, не отобразится в metadata):"/>
-                                        <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="od:groupMode:"/>
-                                            <CheckBox IsChecked="{Binding OdGroupModeIsParagraph, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="paragraph" Margin="3,0,15,5"/>
-                                            <TextBlock Text="e:captionStyle:"/>
-                                            <CheckBox IsChecked="{Binding ECaptionStyleIsGroupHeader, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="GroupHeader" Margin="3,0,15,5"/>
-                                            <TextBlock Text="od:groupStyle:"/>
-                                            <CheckBox IsChecked="{Binding OdGroupStyleIsNewParagraphBoldHeader, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="NewParagraphBoldHeader" Margin="3,0,15,5"/>
-                                            <TextBlock Text="od:ignore:"/>
-                                            <CheckBox IsChecked="{Binding OdIgnore, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="true" Margin="3,0,15,5"/>
-                                        </StackPanel>
-                                        <TextBlock Text="e:caption:"/>
-                                        <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:caption:"/>
-                                        <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:visibleWhen:"/>
-                                        <TextBox Text="{Binding VisibleWhen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:layout:"/>
-                                        <ComboBox SelectedValue="{Binding Layout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  SelectedValuePath="Content"
-                                                  Margin="0,0,0,10">
-                                            <ComboBoxItem Content=""/>
-                                            <ComboBoxItem Content="DockPanel"/>
-                                            <ComboBoxItem Content="StackPanel"/>
-                                            <ComboBoxItem Content="GroupBox"/>
-                                        </ComboBox>
-                                        <TextBlock Text="e:separator:"/>
-                                        <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:suffix:"/>
-                                        <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:separator:"/>
-                                        <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:suffix:"/>
-                                        <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="semd:"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <ComboBox SelectedValue="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                      SelectedValuePath="Content"
-                                                      Width="150"
-                                                      Margin="0,0,5,0">
-                                                <ComboBoxItem Content=""/>
-                                                <ComboBoxItem Content="DiseaseAnamnesis"/>
-                                                <ComboBoxItem Content="LifeAnamnesis"/>
-                                                <ComboBoxItem Content="ObjectiveState"/>
-                                            </ComboBox>
-                                            <TextBlock Text="(если пусто, будет использовано значение из поля ниже)" FontSize="10" Foreground="Gray" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                        <TextBox Text="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,10"/>
-                                        <TextBlock Text="uid:"/>
-                                        <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <WrapPanel Margin="0,10,0,0">
-                                            <Button Content="Добавить свойство" Width="120" Margin="0,0,5,5"
-                                                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                            <Button Content="Добавить подгруппу" Width="130" Margin="0,0,5,5"
-                                                    Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                            <Button Content="Добавить OneOf" Width="120" Margin="0,0,5,5"
-                                                    Command="{Binding DataContext.AddOneOfCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                            <Button Content="Добавить таблицу" Width="130" Margin="0,0,0,5"
-                                                    Command="{Binding DataContext.AddTableCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                        </WrapPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                                <DataTemplate DataType="{x:Type models:PropertyItem}">
-                                    <StackPanel>
-                                        <TextBlock Text="Редактирование свойства" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Имя (для дерева, не отобразится в metadata):"/>
-                                        <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:caption:"/>
-                                        <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:caption:"/>
-                                        <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="type:"/>
-                                        <ComboBox SelectedValue="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" Margin="0,0,0,10">
-                                            <ComboBoxItem Content="String"/>
-                                            <ComboBoxItem Content="Bool"/>
-                                            <ComboBoxItem Content="Const"/>
-                                        </ComboBox>
-
-                                        <!-- Поле value с условным рендерингом -->
-                                        <TextBlock Text="value:"/>
-                                        <ComboBox 
-            SelectedValue="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-            SelectedValuePath="Content"
-            Margin="0,0,0,10"
-            Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=Bool}">
-                                            <ComboBoxItem Content="True"/>
-                                            <ComboBoxItem Content="False"/>
-                                        </ComboBox>
-                                        <TextBox 
-            Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-            Margin="0,0,0,10"
-            Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
-
-                                        <!-- Поля, отображаемые только для String и Const -->
-                                        <TextBlock Text="e:separator:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
-                                        <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
-
-                                        <!-- Поля e:suffix и od:suffix теперь отображаются для String, Const и Bool -->
-                                        <TextBlock Text="e:suffix:"/>
-                                        <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:separator:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
-                                        <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
-                                        <TextBlock Text="od:suffix:"/>
-                                        <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-
-                                        <!-- Поля, отображаемые только для String -->
-                                        <TextBlock Text="xaml:MinWidth:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
-                                        <TextBox Text="{Binding MinWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
-                                        <TextBlock Text="xaml:MinLines:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
-                                        <TextBox Text="{Binding MinLines, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
-                                        <TextBlock Text="e:autoSuggestName:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
-                                        <TextBox Text="{Binding AutoSuggestName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
-
-                                        <!-- Поле semd (видимость зависит от типа, НЕ отображается для Bool) -->
-                                        <TextBlock Text="semd:" Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
-                                        <StackPanel Orientation="Horizontal"
-                    Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}">
-                                            <ComboBox SelectedValue="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                      SelectedValuePath="Content"
-                      Width="150"
-                      Margin="0,0,5,0">
-                                                <ComboBoxItem Content=""/>
-                                                <ComboBoxItem Content="DiseaseAnamnesis"/>
-                                                <ComboBoxItem Content="LifeAnamnesis"/>
-                                                <ComboBoxItem Content="ObjectiveState"/>
-                                            </ComboBox>
-                                            <TextBlock Text="(если пусто, будет использовано значение из поля ниже)" FontSize="10" Foreground="Gray" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                        <TextBox Text="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,10" 
-                 Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
-                                        <TextBlock Text="e:visibleWhen:"/>
-                                        <TextBox Text="{Binding VisibleWhen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="uid:"/>
-                                        <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                                <DataTemplate DataType="{x:Type models:OneOfItem}">
-                                    <StackPanel>
-                                        <TextBlock Text="Редактирование OneOf (радиогруппа)" FontWeight="Bold" FontSize="16" Margin="0,0,0,10" Foreground="#2E7D32"/>
-                                        <TextBlock Text="Имя (name):"/>
-                                        <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="od:ignore:"/>
-                                            <CheckBox IsChecked="{Binding OdIgnore, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="true" Margin="3,0,15,5"/>
-                                            <TextBlock Text="od:sentenceStart:"/>
-                                            <CheckBox IsChecked="{Binding OdSentenceStart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="true" Margin="3,0,15,5"/>
-                                            <TextBlock Text="od:underlined:"/>
-                                            <CheckBox IsChecked="{Binding OdUnderlined, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Content="true" Margin="3,0,15,5"/>
-                                        </StackPanel>
-                                        <TextBlock Text="e:caption:"/>
-                                        <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:caption:"/>
-                                        <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:orientation:"/>
-                                        <ComboBox SelectedValue="{Binding Orientation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  SelectedValuePath="Content"
-                                                  Margin="0,0,0,10">
-                                            <ComboBoxItem Content=""/>
-                                            <ComboBoxItem Content="Horizontal"/>
-                                            <ComboBoxItem Content="Vertical"/>
-                                        </ComboBox>
-                                        <TextBlock Text="type:"/>
-                                        <TextBox Text="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="value:"/>
-                                        <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:visibleWhen:"/>
-                                        <TextBox Text="{Binding VisibleWhen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:prefix:"/>
-                                        <TextBox Text="{Binding Prefix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:separator:"/>
-                                        <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:suffix:"/>
-                                        <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:prefix:"/>
-                                        <TextBox Text="{Binding OdPrefix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:separator:"/>
-                                        <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:suffix:"/>
-                                        <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:groupMode:"/>
-                                        <TextBox Text="{Binding OdGroupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="semd:"/>
-                                        <TextBox Text="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="uid:"/>
-                                        <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <WrapPanel Margin="0,10,0,0">
-                                            <Button Content="Добавить свойство" Width="130"
-                                                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                        </WrapPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                                <DataTemplate DataType="{x:Type models:TableItem}">
-                                    <StackPanel>
-                                        <TextBlock Text="Редактирование таблицы (table)" FontWeight="Bold" FontSize="16" Margin="0,0,0,10" Foreground="#E65100"/>
-                                        <TextBlock Text="e:style:"/>
-                                        <TextBox Text="{Binding EStyle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:tableStretch:"/>
-                                        <TextBox Text="{Binding ETableStretch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:tableStretch:"/>
-                                        <TextBox Text="{Binding OdTableStretch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="uid:"/>
-                                        <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <WrapPanel Margin="0,10,0,0">
-                                            <Button Content="Добавить строку (row)" Width="160"
-                                                    Command="{Binding DataContext.AddRowCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                        </WrapPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                                <DataTemplate DataType="{x:Type models:RowItem}">
-                                    <StackPanel>
-                                        <TextBlock Text="Редактирование строки таблицы (row)" FontWeight="Bold" FontSize="16" Margin="0,0,0,10" Foreground="#E65100"/>
-                                        <TextBlock Text="row (номер/индекс):"/>
-                                        <TextBox Text="{Binding RowIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:justification:"/>
-                                        <TextBox Text="{Binding OdJustification, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="uid:"/>
-                                        <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <WrapPanel Margin="0,10,0,0">
-                                            <Button Content="Добавить ячейку (cell)" Width="160"
-                                                    Command="{Binding DataContext.AddCellCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                        </WrapPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                                <DataTemplate DataType="{x:Type models:CellItem}">
-                                    <StackPanel>
-                                        <TextBlock Text="Редактирование ячейки (cell)" FontWeight="Bold" FontSize="16" Margin="0,0,0,10" Foreground="#795548"/>
-                                        <TextBlock Text="col (колонка):"/>
-                                        <TextBox Text="{Binding Col, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="colSpan:"/>
-                                        <TextBox Text="{Binding ColSpan, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="rowSpan:"/>
-                                        <TextBox Text="{Binding RowSpan, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="text:"/>
-                                        <TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="type:"/>
-                                        <TextBox Text="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="e:layout:"/>
-                                        <ComboBox SelectedValue="{Binding ELayout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  SelectedValuePath="Content"
-                                                  Margin="0,0,0,10">
-                                            <ComboBoxItem Content=""/>
-                                            <ComboBoxItem Content="DockPanel"/>
-                                            <ComboBoxItem Content="StackPanel"/>
-                                            <ComboBoxItem Content="GroupBox"/>
-                                        </ComboBox>
-                                        <TextBlock Text="e:style:"/>
-                                        <TextBox Text="{Binding EStyle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:caption:"/>
-                                        <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:cellWidth:"/>
-                                        <TextBox Text="{Binding OdCellWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="od:justification:"/>
-                                        <TextBox Text="{Binding OdJustification, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <TextBlock Text="uid:"/>
-                                        <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
-                                        <WrapPanel Margin="0,10,0,0">
-                                            <Button Content="Добавить свойство" Width="130" Margin="0,0,5,5"
-                                                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                            <Button Content="Добавить группу" Width="130" Margin="0,0,0,5"
-                                                    Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                        </WrapPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ContentControl.Resources>
-                        </ContentControl>
-                        <TextBlock Text="Выберите элемент для редактирования"
-                                   FontStyle="Italic" Foreground="Gray"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Visibility="{Binding SelectedItem, Converter={StaticResource NullToVisibilityConverter}}"/>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Настройки документа:" Foreground="{StaticResource TextSecondary}" FontSize="12" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Content="🏷 Пространства имён (xmlns)" Command="{Binding OpenNamespaceSettingsCommand}" Style="{StaticResource ChipButton}" Margin="0,0,6,0"/>
+                            <Button Content="📄 Тип документа" Command="{Binding OpenTypeSettingsCommand}" Style="{StaticResource ChipButton}" Margin="0,0,6,0"/>
+                            <Button Content="📑 Блоки консультации" Command="{Binding OpenBlocksSettingsCommand}" Style="{StaticResource ChipButton}"/>
+                        </StackPanel>
                     </Grid>
-                </ScrollViewer>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ========================================================= -->
+        <!-- 2. РАБОЧАЯ ОБЛАСТЬ: ДЕРЕВО (СЛЕВА) + ИНСПЕКТОР (СПРАВА)    -->
+        <!-- ========================================================= -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="410" MinWidth="300" MaxWidth="600"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*" MinWidth="450"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ЛЕВАЯ КОЛОНКА: ДЕРЕВО ШАБЛОНА (Fluent Tree Card) -->
+            <Border Grid.Column="0" Background="{StaticResource CardBackground}" CornerRadius="10"
+                    BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- Заголовок дерева и поиск -->
+                        <RowDefinition Height="*"/>    <!-- Само TreeView -->
+                        <RowDefinition Height="Auto"/> <!-- Панель быстрого добавления в корень -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Шапка дерева: Заголовок и строка поиска -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="СТРУКТУРА ШАБЛОНА" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextMuted}" Margin="2,0,0,8"/>
+                        <!-- Поле поиска WinUI 3 -->
+                        <Grid>
+                            <TextBox Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="28,6,8,6" FontSize="12.5"/>
+                            <TextBlock Text="🔍" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="8,0,0,0" Foreground="{StaticResource TextMuted}" IsHitTestVisible="False"/>
+                            <TextBlock Text="Поиск узлов дерева..." VerticalAlignment="Center" HorizontalAlignment="Left" Margin="28,0,0,0"
+                                       Foreground="{StaticResource TextMuted}" FontSize="12" IsHitTestVisible="False"
+                                       Visibility="{Binding SearchText, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=''}"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- TreeView элементов с маркерами Fluent -->
+                    <TreeView Grid.Row="1" x:Name="MainTreeView" ItemsSource="{Binding RootItems}"
+                              SelectedItemChanged="TreeView_SelectedItemChanged"
+                              PreviewMouseLeftButtonDown="TreeView_PreviewMouseLeftButtonDown"
+                              MouseMove="TreeView_MouseMove"
+                              Drop="TreeView_Drop"
+                              DragOver="TreeView_DragOver"
+                              AllowDrop="True"
+                              KeyDown="TreeView_KeyDown"
+                              Background="Transparent"
+                              BorderThickness="0">
+                        <TreeView.InputBindings>
+                            <KeyBinding Key="D" Modifiers="Control" 
+                                        Command="{Binding DataContext.DuplicateCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                        </TreeView.InputBindings>
+                        <TreeView.ItemContainerStyle>
+                            <Style BasedOn="{StaticResource TreeViewItemWithLine}" TargetType="TreeViewItem"/>
+                        </TreeView.ItemContainerStyle>
+
+                        <TreeView.Resources>
+                            <!-- 1. Шаблон Секции -->
+                            <HierarchicalDataTemplate DataType="{x:Type models:SectionItem}" ItemsSource="{Binding Children}">
+                                <StackPanel Orientation="Horizontal" Margin="0,1">
+                                    <Border Background="{StaticResource FluentBadgeSectionBg}" BorderBrush="{StaticResource FluentBadgeSectionBorder}" BorderThickness="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0">
+                                        <TextBlock Text="Секция" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource FluentBadgeSectionFg}"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="13.5" Foreground="{StaticResource TextPrimary}"/>
+                                </StackPanel>
+                            </HierarchicalDataTemplate>
+
+                            <!-- 2. Шаблон Группы -->
+                            <HierarchicalDataTemplate DataType="{x:Type models:GroupItem}" ItemsSource="{Binding Children}">
+                                <StackPanel Orientation="Horizontal" Margin="0,1">
+                                    <Border Background="{StaticResource FluentBadgeGroupBg}" BorderBrush="{StaticResource FluentBadgeGroupBorder}" BorderThickness="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0">
+                                        <TextBlock Text="Группа" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource FluentBadgeGroupFg}"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimary}"/>
+                                </StackPanel>
+                            </HierarchicalDataTemplate>
+
+                            <!-- 3. Шаблон OneOf -->
+                            <HierarchicalDataTemplate DataType="{x:Type models:OneOfItem}" ItemsSource="{Binding Children}">
+                                <StackPanel Orientation="Horizontal" Margin="0,1">
+                                    <Border Background="{StaticResource FluentBadgeOneOfBg}" BorderBrush="{StaticResource FluentBadgeOneOfBorder}" BorderThickness="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0">
+                                        <TextBlock Text="◉ OneOf" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource FluentBadgeOneOfFg}"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource FluentBadgeOneOfFg}"/>
+                                </StackPanel>
+                            </HierarchicalDataTemplate>
+
+                            <!-- 4. Шаблон Таблицы -->
+                            <HierarchicalDataTemplate DataType="{x:Type models:TableItem}" ItemsSource="{Binding Children}">
+                                <StackPanel Orientation="Horizontal" Margin="0,1">
+                                    <Border Background="{StaticResource FluentBadgeTableBg}" BorderBrush="{StaticResource FluentBadgeTableBorder}" BorderThickness="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0">
+                                        <TextBlock Text="▦ Таблица" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource FluentBadgeTableFg}"/>
+                                    </Border>
+                                    <TextBlock Text="table" FontWeight="SemiBold" FontSize="12.5" Foreground="{StaticResource FluentBadgeTableFg}"/>
+                                </StackPanel>
+                            </HierarchicalDataTemplate>
+
+                            <!-- 5. Шаблон Строки -->
+                            <HierarchicalDataTemplate DataType="{x:Type models:RowItem}" ItemsSource="{Binding Children}">
+                                <StackPanel Orientation="Horizontal" Margin="0,1">
+                                    <Border Background="{StaticResource FluentBadgeRowBg}" BorderBrush="{StaticResource FluentBadgeRowBorder}" BorderThickness="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0">
+                                        <TextBlock Text="Строка" FontSize="10" FontWeight="Bold" Foreground="{StaticResource FluentBadgeRowFg}"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding RowIndex, StringFormat='row={0}'}" FontSize="12" Foreground="{StaticResource FluentBadgeRowFg}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </HierarchicalDataTemplate>
+
+                            <!-- 6. Шаблон Ячейки -->
+                            <HierarchicalDataTemplate DataType="{x:Type models:CellItem}" ItemsSource="{Binding Children}">
+                                <StackPanel Orientation="Horizontal" Margin="0,1">
+                                    <Border Background="{StaticResource FluentBadgeCellBg}" BorderBrush="{StaticResource FluentBadgeCellBorder}" BorderThickness="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0">
+                                        <TextBlock Text="Ячейка" FontSize="10" FontWeight="Bold" Foreground="{StaticResource FluentBadgeCellFg}"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Col, StringFormat='col={0}'}" FontSize="12" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Text, StringFormat=' ({0})'}" FontSize="11.5" Foreground="{StaticResource TextMuted}"/>
+                                </StackPanel>
+                            </HierarchicalDataTemplate>
+
+                            <!-- 7. Шаблон Свойства -->
+                            <DataTemplate DataType="{x:Type models:PropertyItem}">
+                                <StackPanel Orientation="Horizontal" Margin="0,1">
+                                    <Border Background="{StaticResource FluentBadgePropertyBg}" BorderBrush="{StaticResource FluentBadgePropertyBorder}" BorderThickness="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0">
+                                        <TextBlock Text="Свойство" FontSize="10" FontWeight="Bold" Foreground="{StaticResource FluentBadgePropertyFg}"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Name}" FontSize="12.5" Foreground="{StaticResource TextPrimary}"/>
+                                    <TextBlock Text="{Binding Type, StringFormat=' ({0})'}" FontSize="11" Foreground="{StaticResource TextMuted}" Margin="3,0,0,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </TreeView.Resources>
+                    </TreeView>
+
+                    <!-- Быстрое добавление в корень (нижняя панель дерева) -->
+                    <Border Grid.Row="2" Background="{StaticResource FluentBgSubCard}" CornerRadius="8" Padding="6" Margin="0,10,0,0"
+                            BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+                        <WrapPanel HorizontalAlignment="Center">
+                            <Button Content="+ Секция" Command="{Binding AddSectionToRootCommand}" Style="{StaticResource ModernButton}" Margin="2"/>
+                            <Button Content="+ Группа" Command="{Binding AddGroupToRootCommand}" Style="{StaticResource ModernButton}" Margin="2"/>
+                            <Button Content="+ OneOf" Command="{Binding AddOneOfCommand}" Style="{StaticResource ModernButton}" Margin="2"/>
+                            <Button Content="+ Таблица" Command="{Binding AddTableCommand}" Style="{StaticResource ModernButton}" Margin="2"/>
+                            <Button Content="+ Свойство" Command="{Binding AddPropertyToRootCommand}" Style="{StaticResource ModernButton}" Margin="2"/>
+                        </WrapPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- РАЗДЕЛИТЕЛЬ КОЛОНОК (Splitter) -->
+            <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                          Background="Transparent" Cursor="SizeWE"/>
+
+            <!-- ПРАВАЯ КОЛОНКА: ИНСПЕКТОР СВОЙСТВ (С АККОРДЕОНАМИ-EXPANDER) -->
+            <Border Grid.Column="2" Background="{StaticResource CardBackground}" CornerRadius="10"
+                    BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="18">
+                <Grid>
+                    <ContentControl Content="{Binding SelectedItem}">
+                        <ContentControl.Resources>
+
+                            <!-- ========================================================= -->
+                            <!-- РЕДАКТОР: SECTION ITEM                                    -->
+                            <!-- ========================================================= -->
+                            <DataTemplate DataType="{x:Type models:SectionItem}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/> <!-- Заголовок карточки -->
+                                        <RowDefinition Height="*"/>    <!-- Поля редактирования -->
+                                        <RowDefinition Height="Auto"/> <!-- Кнопки действий -->
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Заголовок карточки -->
+                                    <Border Grid.Row="0" BorderBrush="{StaticResource BorderLight}" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,14">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="{StaticResource FluentBadgeSectionBg}" BorderBrush="{StaticResource FluentBadgeSectionBorder}" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,0,10,0">
+                                                <TextBlock Text="СЕКЦИЯ" FontWeight="Bold" FontSize="11" Foreground="{StaticResource FluentBadgeSectionFg}"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="17" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="0,0,8,0">
+                                            <TextBlock Text="Код секции (code):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Имя секции (name):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Заголовок (title):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="SEMD классификатор:" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="220"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <ComboBox Grid.Column="0"
+                                                          SelectedValue="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                          SelectedValuePath="Content">
+                                                    <ComboBoxItem Content=""/>
+                                                    <ComboBoxItem Content="DiseaseAnamnesis"/>
+                                                    <ComboBoxItem Content="LifeAnamnesis"/>
+                                                    <ComboBoxItem Content="ObjectiveState"/>
+                                                </ComboBox>
+                                                <TextBlock Grid.Column="1" Text="(или введите вручную ниже)" FontSize="11.5" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                            </Grid>
+                                            <TextBox Text="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Уникальный идентификатор (uid):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+                                        </StackPanel>
+                                    </ScrollViewer>
+
+                                    <!-- Панель добавления дочерних элементов -->
+                                    <Border Grid.Row="2" Background="{StaticResource FluentBgSubCard}" CornerRadius="8" Padding="10" Margin="0,14,0,0"
+                                            BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+                                        <WrapPanel>
+                                            <TextBlock Text="Добавить внутрь секции:" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}" FontSize="12" FontWeight="SemiBold" Margin="0,0,12,0"/>
+                                            <Button Content="+ Группа" Width="110" Style="{StaticResource ModernButton}" Margin="0,0,6,0" Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="+ OneOf" Width="110" Style="{StaticResource ModernButton}" Margin="0,0,6,0" Command="{Binding DataContext.AddOneOfCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="+ Таблица" Width="110" Style="{StaticResource ModernButton}" Margin="0,0,6,0" Command="{Binding DataContext.AddTableCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="+ Свойство" Width="110" Style="{StaticResource ModernButton}" Margin="0,0,6,0" Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="🗑 Удалить" Width="90" Style="{StaticResource DangerButton}" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        </WrapPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+
+                            <!-- ========================================================= -->
+                            <!-- РЕДАКТОР: GROUP ITEM (АККОРДЕОНЫ EXPANDER)                -->
+                            <!-- ========================================================= -->
+                            <DataTemplate DataType="{x:Type models:GroupItem}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/> <!-- Заголовок -->
+                                        <RowDefinition Height="*"/>    <!-- Аккордеоны настроек -->
+                                        <RowDefinition Height="Auto"/> <!-- Кнопки действий -->
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Заголовок карточки -->
+                                    <Border Grid.Row="0" BorderBrush="{StaticResource BorderLight}" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,10">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="{StaticResource FluentBadgeGroupBg}" BorderBrush="{StaticResource FluentBadgeGroupBorder}" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,0,10,0">
+                                                <TextBlock Text="ГРУППА" FontWeight="Bold" FontSize="11" Foreground="{StaticResource FluentBadgeGroupFg}"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="17" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Сворачиваемые карточки настроек группы (Аккордеоны) -->
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="0,0,6,0">
+                                            <!-- Карточка 1: Основные свойства -->
+                                            <Expander Header="📌 Основные свойства" IsExpanded="True">
+                                                <StackPanel>
+                                                    <TextBlock Text="Имя группы (name):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Макет расположения (e:layout):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <ComboBox SelectedValue="{Binding Layout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              SelectedValuePath="Content" Margin="0,0,0,12">
+                                                        <ComboBoxItem Content=""/>
+                                                        <ComboBoxItem Content="DockPanel"/>
+                                                        <ComboBoxItem Content="StackPanel"/>
+                                                        <ComboBoxItem Content="GroupBox"/>
+                                                    </ComboBox>
+
+                                                    <TextBlock Text="Заголовок для редактора (e:caption):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Заголовок для печати (od:caption):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Expander>
+
+                                            <!-- Карточка 2: Редактор (e:) -->
+                                            <Expander Header="⚙ Настройки редактора (e:)" IsExpanded="True">
+                                                <StackPanel>
+                                                    <Border Background="{StaticResource FluentBgSubCard}" CornerRadius="6" Padding="12,10" Margin="0,0,0,14" BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+                                                        <CheckBox IsChecked="{Binding ECaptionStyleIsGroupHeader, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                  Content="e:captionStyle='GroupHeader' (Оформление заголовка группы)"/>
+                                                    </Border>
+
+                                                    <TextBlock Text="Разделитель (e:separator):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Суффикс (e:suffix):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Expander>
+
+                                            <!-- Карточка 3: Печать (od:) -->
+                                            <Expander Header="🖨 Печатная форма (od:)" IsExpanded="False">
+                                                <StackPanel>
+                                                    <Border Background="{StaticResource FluentBgSubCard}" CornerRadius="6" Padding="12,10" Margin="0,0,0,14" BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+                                                        <StackPanel>
+                                                            <CheckBox IsChecked="{Binding OdGroupModeIsParagraph, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                      Content="od:groupMode='paragraph' (Печать группы отдельным абзацем)" Margin="0,0,0,10"/>
+                                                            <CheckBox IsChecked="{Binding OdGroupStyleIsNewParagraphBoldHeader, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                      Content="od:groupStyle='NewParagraphBoldHeader' (Новый абзац, жирный заголовок)" Margin="0,0,0,10"/>
+                                                            <CheckBox IsChecked="{Binding OdIgnore, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                      Content="od:ignore='true' (Игнорировать при печати документа)"/>
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <TextBlock Text="Разделитель при печати (od:separator):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Суффикс при печати (od:suffix):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Expander>
+
+                                            <!-- Карточка 4: Логика и SEMD -->
+                                            <Expander Header="🧠 Логика и SEMD классификатор" IsExpanded="False">
+                                                <StackPanel>
+                                                    <TextBlock Text="Условие видимости (e:visibleWhen):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding VisibleWhen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="SEMD классификатор:" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Уникальный идентификатор (uid):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Expander>
+                                        </StackPanel>
+                                    </ScrollViewer>
+
+                                    <!-- Панель добавления дочерних элементов -->
+                                    <Border Grid.Row="2" Background="{StaticResource FluentBgSubCard}" CornerRadius="8" Padding="10" Margin="0,14,0,0"
+                                            BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+                                        <WrapPanel>
+                                            <TextBlock Text="Добавить в группу:" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}" FontSize="12" FontWeight="SemiBold" Margin="0,0,12,0"/>
+                                            <Button Content="+ Свойство" Width="110" Style="{StaticResource ModernButton}" Margin="0,0,6,0" Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="+ Подгруппу" Width="110" Style="{StaticResource ModernButton}" Margin="0,0,6,0" Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="+ OneOf" Width="110" Style="{StaticResource ModernButton}" Margin="0,0,6,0" Command="{Binding DataContext.AddOneOfCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="+ Таблицу" Width="110" Style="{StaticResource ModernButton}" Margin="0,0,6,0" Command="{Binding DataContext.AddTableCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="🗑 Удалить" Width="90" Style="{StaticResource DangerButton}" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        </WrapPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+
+                            <!-- ========================================================= -->
+                            <!-- РЕДАКТОР: PROPERTY ITEM (АККОРДЕОНЫ EXPANDER)             -->
+                            <!-- ========================================================= -->
+                            <DataTemplate DataType="{x:Type models:PropertyItem}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/> <!-- Заголовок -->
+                                        <RowDefinition Height="*"/>    <!-- Аккордеоны настроек -->
+                                        <RowDefinition Height="Auto"/> <!-- Кнопки действий -->
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Заголовок карточки -->
+                                    <Border Grid.Row="0" BorderBrush="{StaticResource BorderLight}" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,10">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="{StaticResource FluentBadgePropertyBg}" BorderBrush="{StaticResource FluentBadgePropertyBorder}" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,0,10,0">
+                                                <TextBlock Text="СВОЙСТВО" FontWeight="Bold" FontSize="11" Foreground="{StaticResource FluentBadgePropertyFg}"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="17" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                            <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Type, StringFormat='Тип: {0}'}" FontSize="11.5" Foreground="{StaticResource TextSecondary}"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Сворачиваемые карточки свойств (Аккордеоны WinUI 3) -->
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="0,0,6,0">
+                                            <!-- Карточка 1: Основные параметры -->
+                                            <Expander Header="📌 Основные свойства" IsExpanded="True">
+                                                <StackPanel>
+                                                    <TextBlock Text="Имя свойства (name):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Тип данных (type):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <ComboBox SelectedValue="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              SelectedValuePath="Content" Margin="0,0,0,12">
+                                                        <ComboBoxItem Content="String"/>
+                                                        <ComboBoxItem Content="Bool"/>
+                                                        <ComboBoxItem Content="Const"/>
+                                                    </ComboBox>
+
+                                                    <TextBlock Text="Значение по умолчанию (value):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <!-- Значение для Bool -->
+                                                    <ComboBox SelectedValue="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              SelectedValuePath="Content" Margin="0,0,0,12"
+                                                              Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=Bool}">
+                                                        <ComboBoxItem Content="True"/>
+                                                        <ComboBoxItem Content="False"/>
+                                                    </ComboBox>
+                                                    <!-- Значение для String / Const -->
+                                                    <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"
+                                                             Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+
+                                                    <TextBlock Text="Заголовок для редактора (e:caption):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Заголовок для печати (od:caption):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Expander>
+
+                                            <!-- Карточка 2: Настройки редактора (e:) -->
+                                            <Expander Header="⚙ Настройки редактора (e:)" IsExpanded="True">
+                                                <StackPanel>
+                                                    <TextBlock Text="Разделитель (e:separator):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"
+                                                               Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+                                                    <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"
+                                                             Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+
+                                                    <TextBlock Text="Суффикс (e:suffix):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Автоподсказка (e:autoSuggestName):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"
+                                                               Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+                                                    <TextBox Text="{Binding AutoSuggestName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"
+                                                             Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+
+                                                    <TextBlock Text="Минимальная ширина (xaml:MinWidth):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"
+                                                               Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+                                                    <TextBox Text="{Binding MinWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"
+                                                             Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+
+                                                    <TextBlock Text="Минимум строк (xaml:MinLines):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"
+                                                               Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+                                                    <TextBox Text="{Binding MinLines, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=String}"/>
+                                                </StackPanel>
+                                            </Expander>
+
+                                            <!-- Карточка 3: Печать (od:) -->
+                                            <Expander Header="🖨 Печатная форма (od:)" IsExpanded="False">
+                                                <StackPanel>
+                                                    <TextBlock Text="Разделитель при печати (od:separator):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"
+                                                               Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+                                                    <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"
+                                                             Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+
+                                                    <TextBlock Text="Суффикс при печати (od:suffix):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Expander>
+
+                                            <!-- Карточка 4: Логика и SEMD -->
+                                            <Expander Header="🧠 Логика и SEMD классификатор" IsExpanded="False">
+                                                <StackPanel>
+                                                    <TextBlock Text="Условие видимости (e:visibleWhen):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding VisibleWhen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="SEMD классификатор:" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"
+                                                               Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+                                                    <TextBox Text="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"
+                                                             Visibility="{Binding Type, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=!Bool}"/>
+
+                                                    <TextBlock Text="Уникальный идентификатор (uid):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Expander>
+                                        </StackPanel>
+                                    </ScrollViewer>
+
+                                    <!-- Кнопки действий -->
+                                    <Border Grid.Row="2" Background="{StaticResource FluentBgSubCard}" CornerRadius="8" Padding="10" Margin="0,14,0,0"
+                                            BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="🗑 Удалить свойство" Style="{StaticResource DangerButton}"
+                                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+
+                            <!-- ========================================================= -->
+                            <!-- РЕДАКТОР: ONEOF ITEM (АККОРДЕОНЫ EXPANDER)                -->
+                            <!-- ========================================================= -->
+                            <DataTemplate DataType="{x:Type models:OneOfItem}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/> <!-- Заголовок -->
+                                        <RowDefinition Height="*"/>    <!-- Аккордеоны настроек -->
+                                        <RowDefinition Height="Auto"/> <!-- Кнопки действий -->
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Заголовок карточки -->
+                                    <Border Grid.Row="0" BorderBrush="{StaticResource BorderLight}" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,10">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="{StaticResource FluentBadgeOneOfBg}" BorderBrush="{StaticResource FluentBadgeOneOfBorder}" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,0,10,0">
+                                                <TextBlock Text="РАДИОГРУППА ONEOF" FontWeight="Bold" FontSize="11" Foreground="{StaticResource FluentBadgeOneOfFg}"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="17" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Аккордеоны OneOf -->
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="0,0,6,0">
+                                            <Expander Header="📌 Основные свойства" IsExpanded="True">
+                                                <StackPanel>
+                                                    <TextBlock Text="Имя группы (name):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Ориентация (e:orientation):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <ComboBox SelectedValue="{Binding Orientation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              SelectedValuePath="Content" Margin="0,0,0,12">
+                                                        <ComboBoxItem Content=""/>
+                                                        <ComboBoxItem Content="Horizontal"/>
+                                                        <ComboBoxItem Content="Vertical"/>
+                                                    </ComboBox>
+
+                                                    <TextBlock Text="Заголовок для редактора (e:caption):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Caption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Заголовок для печати (od:caption):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding OdCaption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Тип значения (type):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Выбранное значение (value):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Expander>
+
+                                            <Expander Header="⚙ Настройки редактора (e:)" IsExpanded="True">
+                                                <StackPanel>
+                                                    <TextBlock Text="Префикс (e:prefix):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Prefix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Разделитель (e:separator):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Separator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Суффикс (e:suffix):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Suffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Expander>
+
+                                            <Expander Header="🖨 Печатная форма (od:)" IsExpanded="False">
+                                                <StackPanel>
+                                                    <Border Background="{StaticResource FluentBgSubCard}" CornerRadius="6" Padding="12,10" Margin="0,0,0,14" BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+                                                        <StackPanel>
+                                                            <CheckBox IsChecked="{Binding OdIgnore, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                      Content="od:ignore='true' (Игнорировать при печати)" Margin="0,0,0,10"/>
+                                                            <CheckBox IsChecked="{Binding OdSentenceStart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                      Content="od:sentenceStart='true' (Начинать предложение с заглавной)" Margin="0,0,0,10"/>
+                                                            <CheckBox IsChecked="{Binding OdUnderlined, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                      Content="od:underlined='true' (Подчёркивание текста)"/>
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <TextBlock Text="Префикс печати (od:prefix):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding OdPrefix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Разделитель печати (od:separator):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding OdSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Суффикс печати (od:suffix):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding OdSuffix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Режим группы (od:groupMode):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding OdGroupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Expander>
+
+                                            <Expander Header="🧠 Логика и SEMD классификатор" IsExpanded="False">
+                                                <StackPanel>
+                                                    <TextBlock Text="Условие видимости (e:visibleWhen):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding VisibleWhen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="SEMD классификатор:" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Semd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                                    <TextBlock Text="Уникальный идентификатор (uid):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                                    <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </StackPanel>
+                                            </Expander>
+                                        </StackPanel>
+                                    </ScrollViewer>
+
+                                    <!-- Кнопки действий OneOf -->
+                                    <Border Grid.Row="2" Background="{StaticResource FluentBgSubCard}" CornerRadius="8" Padding="10" Margin="0,14,0,0"
+                                            BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+                                        <WrapPanel>
+                                            <Button Content="+ Добавить вариант (Property)" Width="210" Style="{StaticResource ModernButton}" Margin="0,0,6,0"
+                                                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="🗑 Удалить OneOf" Width="140" Style="{StaticResource DangerButton}"
+                                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        </WrapPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+
+                            <!-- ========================================================= -->
+                            <!-- РЕДАКТОР: TABLE ITEM                                      -->
+                            <!-- ========================================================= -->
+                            <DataTemplate DataType="{x:Type models:TableItem}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Border Grid.Row="0" BorderBrush="{StaticResource BorderLight}" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,14">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="{StaticResource FluentBadgeTableBg}" BorderBrush="{StaticResource FluentBadgeTableBorder}" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,0,10,0">
+                                                <TextBlock Text="ТАБЛИЦА" FontWeight="Bold" FontSize="11" Foreground="{StaticResource FluentBadgeTableFg}"/>
+                                            </Border>
+                                            <TextBlock Text="Свойства таблицы" FontWeight="Bold" FontSize="17" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="0,0,8,0">
+                                            <TextBlock Text="Стиль таблицы (e:style):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding EStyle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Растяжение в редакторе (e:tableStretch):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding ETableStretch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Растяжение при печати (od:tableStretch):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding OdTableStretch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Уникальный идентификатор (uid):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+                                        </StackPanel>
+                                    </ScrollViewer>
+
+                                    <Border Grid.Row="2" Background="{StaticResource FluentBgSubCard}" CornerRadius="8" Padding="10" Margin="0,14,0,0"
+                                            BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+                                        <WrapPanel>
+                                            <Button Content="+ Добавить строку (Row)" Width="170" Style="{StaticResource ModernButton}" Margin="0,0,6,0"
+                                                    Command="{Binding DataContext.AddRowCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="🗑 Удалить таблицу" Width="140" Style="{StaticResource DangerButton}"
+                                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        </WrapPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+
+                            <!-- ========================================================= -->
+                            <!-- РЕДАКТОР: ROW ITEM                                        -->
+                            <!-- ========================================================= -->
+                            <DataTemplate DataType="{x:Type models:RowItem}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Border Grid.Row="0" BorderBrush="{StaticResource BorderLight}" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,14">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="{StaticResource FluentBadgeRowBg}" BorderBrush="{StaticResource FluentBadgeRowBorder}" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,0,10,0">
+                                                <TextBlock Text="СТРОКА ТАБЛИЦЫ" FontWeight="Bold" FontSize="11" Foreground="{StaticResource FluentBadgeRowFg}"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding RowIndex, StringFormat='Строка {0}'}" FontWeight="Bold" FontSize="17" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="0,0,8,0">
+                                            <TextBlock Text="Индекс/номер строки (row):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding RowIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Выравнивание при печати (od:justification):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding OdJustification, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Уникальный идентификатор (uid):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+                                        </StackPanel>
+                                    </ScrollViewer>
+
+                                    <Border Grid.Row="2" Background="{StaticResource FluentBgSubCard}" CornerRadius="8" Padding="10" Margin="0,14,0,0"
+                                            BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+                                        <WrapPanel>
+                                            <Button Content="+ Добавить ячейку (Cell)" Width="170" Style="{StaticResource ModernButton}" Margin="0,0,6,0"
+                                                    Command="{Binding DataContext.AddCellCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="🗑 Удалить строку" Width="130" Style="{StaticResource DangerButton}"
+                                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        </WrapPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+
+                            <!-- ========================================================= -->
+                            <!-- РЕДАКТОР: CELL ITEM                                       -->
+                            <!-- ========================================================= -->
+                            <DataTemplate DataType="{x:Type models:CellItem}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Border Grid.Row="0" BorderBrush="{StaticResource BorderLight}" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,14">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="{StaticResource FluentBadgeCellBg}" BorderBrush="{StaticResource FluentBadgeCellBorder}" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,0,10,0">
+                                                <TextBlock Text="ЯЧЕЙКА ТАБЛИЦЫ" FontWeight="Bold" FontSize="11" Foreground="{StaticResource FluentBadgeCellFg}"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Col, StringFormat='Ячейка (колонка {0})'}" FontWeight="Bold" FontSize="17" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="0,0,8,0">
+                                            <TextBlock Text="Номер колонки (col):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding Col, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Объединение колонок (colSpan):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding ColSpan, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Объединение строк (rowSpan):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding RowSpan, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Статический текст (text):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Тип (type):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Макет ячейки (e:layout):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <ComboBox SelectedValue="{Binding ELayout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                      SelectedValuePath="Content" Margin="0,0,0,12">
+                                                <ComboBoxItem Content=""/>
+                                                <ComboBoxItem Content="DockPanel"/>
+                                                <ComboBoxItem Content="StackPanel"/>
+                                                <ComboBoxItem Content="GroupBox"/>
+                                            </ComboBox>
+
+                                            <TextBlock Text="Стиль (e:style):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding EStyle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Ширина при печати (od:cellWidth):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding OdCellWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Выравнивание (od:justification):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding OdJustification, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                                            <TextBlock Text="Уникальный идентификатор (uid):" Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,4"/>
+                                            <TextBox Text="{Binding Uid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+                                        </StackPanel>
+                                    </ScrollViewer>
+
+                                    <Border Grid.Row="2" Background="{StaticResource FluentBgSubCard}" CornerRadius="8" Padding="10" Margin="0,14,0,0"
+                                            BorderBrush="{StaticResource BorderLight}" BorderThickness="1">
+                                        <WrapPanel>
+                                            <Button Content="+ Свойство в ячейку" Width="150" Style="{StaticResource ModernButton}" Margin="0,0,6,0"
+                                                    Command="{Binding DataContext.AddPropertyCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="+ Группу в ячейку" Width="150" Style="{StaticResource ModernButton}" Margin="0,0,6,0"
+                                                    Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <Button Content="🗑 Удалить ячейку" Width="130" Style="{StaticResource DangerButton}"
+                                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        </WrapPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ContentControl.Resources>
+                    </ContentControl>
+
+                    <!-- Заглушка, когда элемент не выбран -->
+                    <Border Background="{StaticResource FluentBgSubCard}" CornerRadius="8" Padding="24"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            BorderBrush="{StaticResource BorderLight}" BorderThickness="1"
+                            Visibility="{Binding SelectedItem, Converter={StaticResource NullToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="👈" FontSize="28" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock Text="Выберите элемент в дереве слева" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="или создайте новый с помощью кнопок под деревом" FontSize="12" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </Border>
         </Grid>
-        <!--  Футер  -->
-        <Border Grid.Row="3" Background="#f0f0f0" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,10,0,0">
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                <ListBox x:Name="FooterListBox"
-                         ItemsSource="{Binding FooterItems}"
-                         SelectedItem="{Binding SelectedItem}"
-                         PreviewMouseLeftButtonDown="FooterListBox_PreviewMouseLeftButtonDown"
-                         MouseMove="FooterListBox_MouseMove"
-                         Drop="FooterListBox_Drop"
-                         DragOver="FooterListBox_DragOver"
-                         AllowDrop="True"
-                         Background="Transparent"
-                         BorderThickness="0"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                    <ListBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ListBox.ItemsPanel>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Border BorderBrush="#ccc" BorderThickness="1" CornerRadius="3" Margin="3" Padding="5" Background="White">
-                                <TextBlock Text="{Binding}" />
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Padding" Value="3"/>
-                            <Setter Property="Margin" Value="0"/>
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="#e8edec"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                </ListBox>
-            </ScrollViewer>
+
+        <!-- ========================================================= -->
+        <!-- 3. ФУТЕР-БЛОКИ (Footer Blocks)                            -->
+        <!-- ========================================================= -->
+        <Border Grid.Row="2" Background="{StaticResource CardBackground}" CornerRadius="10"
+                BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="12,10" Margin="0,12,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="📋 Блоки консультации:" FontWeight="SemiBold" FontSize="12.5" Foreground="{StaticResource TextSecondary}"/>
+                </StackPanel>
+
+                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <ListBox x:Name="FooterListBox"
+                             ItemsSource="{Binding FooterItems}"
+                             SelectedItem="{Binding SelectedItem}"
+                             PreviewMouseLeftButtonDown="FooterListBox_PreviewMouseLeftButtonDown"
+                             MouseMove="FooterListBox_MouseMove"
+                             Drop="FooterListBox_Drop"
+                             DragOver="FooterListBox_DragOver"
+                             AllowDrop="True"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{StaticResource BorderLight}" BorderThickness="1" CornerRadius="6" Padding="10,5" Margin="0,0,6,0" Background="{StaticResource FluentBgSubCard}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text=":: " Foreground="{StaticResource TextMuted}" FontSize="10" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding}" FontSize="12" FontWeight="Medium" Foreground="{StaticResource TextPrimary}"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
+                </ScrollViewer>
+            </Grid>
         </Border>
-        <!--  Кнопки  -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button Content="Добавить секцию" Command="{Binding AddSectionToRootCommand}" Width="120" Margin="0,0,5,0"/>
-            <Button Content="Добавить группу" Command="{Binding AddGroupToRootCommand}" Width="120" Margin="0,0,5,0"/>
-            <Button Content="Добавить свойство" Command="{Binding AddPropertyToRootCommand}" Width="120" Margin="0,0,5,0"/>
-            <Button Content="Удалить" Command="{Binding DeleteCommand}" Width="100" Margin="0,0,5,0"/>
-            <Button Content="Сбросить всё" Command="{Binding ResetCommand}" Width="120" Margin="0,0,5,0"/>
-            <Button Content="Загрузить XML" Command="{Binding LoadCommand}" Width="120" Margin="0,0,5,0"/>
-            <Button Content="Сохранить XML" Command="{Binding SaveCommand}" Width="140"/>
-        </StackPanel>
+
+        <!-- ========================================================= -->
+        <!-- 4. СТРОКА СОСТОЯНИЯ (Fluent Status Bar)                   -->
+        <!-- ========================================================= -->
+        <Grid Grid.Row="3" Margin="4,8,4,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Готов к работе" FontSize="11.5" Foreground="{StaticResource TextMuted}"/>
+                <TextBlock Text=" • Горячие клавиши: Ctrl+D (дублировать) | Del (удалить) | Drag &amp; Drop" FontSize="11.5" Foreground="{StaticResource TextMuted}" Margin="10,0,0,0"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Fluent Studio" FontSize="11.5" Foreground="{StaticResource PrimaryAccent}" FontWeight="SemiBold"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

@@ -1,74 +1,83 @@
-﻿<Window x:Class="XmlGeneratorNew.Views.BlocksSettingsWindow"
+<Window x:Class="XmlGeneratorNew.Views.BlocksSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Настройки блоков" 
-        Height="450" 
-        Width="400"
+        Title="Блоки консультации" 
+        Width="480" 
+        SizeToContent="Height"
+        MaxHeight="700"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
-    <Grid Margin="10">
+        ResizeMode="NoResize"
+        Background="{StaticResource FluentBgWindow}"
+        Foreground="{StaticResource FluentTextPrimary}"
+        SnapsToDevicePixels="True">
+    <Grid Margin="18">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" 
-                   Text="Выберите блоки для включения в документ:"
-                   FontWeight="SemiBold"
-                   Margin="0,0,0,15"/>
-
-        <StackPanel Grid.Row="1" Margin="0,0,0,15">
-            <GroupBox Header="Диагнозы" Margin="0,0,0,10">
-                <StackPanel Margin="5">
-                    <CheckBox Content="Диагнозы МКБ" 
-                              IsChecked="{Binding IsDiagnosis}"
-                              Margin="0,5"/>
-                    <CheckBox Content="Диагнозы МКФ - первичный" 
-                              IsChecked="{Binding IsIcfInitial}"
-                              Margin="0,5"/>
-                    <CheckBox Content="Диагнозы МКФ - повторный" 
-                              IsChecked="{Binding IsIcfRecurrent}"
-                              Margin="0,5"/>
-                    <CheckBox Content="Диагнозы МКФ - заключительный" 
-                              IsChecked="{Binding IsIcfFinal}"
-                              Margin="0,5"/>
+        <!-- Шапка окна WinUI 3 -->
+        <Border Grid.Row="0" Margin="0,0,0,16" Padding="0,0,0,12" BorderBrush="{StaticResource FluentBorder}" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Background="{StaticResource FluentAccentLight}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="8" Width="38" Height="38" Margin="0,0,12,0">
+                    <TextBlock Text="📑" FontSize="18" Foreground="{StaticResource FluentAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Блоки консультации" FontWeight="Bold" FontSize="16" Foreground="{StaticResource FluentTextTitle}"/>
+                    <TextBlock Text="Системные разделы для включения в шаблон документа" FontSize="12" Foreground="{StaticResource FluentTextSecondary}" Margin="0,2,0,0"/>
                 </StackPanel>
-            </GroupBox>
+            </StackPanel>
+        </Border>
 
-            <GroupBox Header="Лечение" Margin="0,0,0,10">
-                <StackPanel Margin="5">
-                    <CheckBox Content="Назначения" 
-                              IsChecked="{Binding IsAssignments}"
-                              Margin="0,5"/>
-                    <CheckBox Content="Лечебные действия" 
-                              IsChecked="{Binding IsTreatmentActions}"
-                              Margin="0,5"/>
-                </StackPanel>
-            </GroupBox>
+        <!-- Список групп блоков в виде WinUI 3 карточек -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,16">
+            <StackPanel>
+                <!-- Группа: Диагнозы -->
+                <Expander Header="Диагнозы (МКБ / МКФ)" IsExpanded="True" Margin="0,0,0,10">
+                    <StackPanel Margin="0,4,0,0">
+                        <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,0,0,6">
+                            <CheckBox Content="Диагнозы МКБ" IsChecked="{Binding IsDiagnosis, Mode=TwoWay}"/>
+                        </Border>
+                        <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,0,0,6">
+                            <CheckBox Content="Диагнозы МКФ — первичный" IsChecked="{Binding IsIcfInitial, Mode=TwoWay}"/>
+                        </Border>
+                        <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,0,0,6">
+                            <CheckBox Content="Диагнозы МКФ — повторный" IsChecked="{Binding IsIcfRecurrent, Mode=TwoWay}"/>
+                        </Border>
+                        <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,8">
+                            <CheckBox Content="Диагнозы МКФ — заключительный" IsChecked="{Binding IsIcfFinal, Mode=TwoWay}"/>
+                        </Border>
+                    </StackPanel>
+                </Expander>
 
-            <GroupBox Header="Документы">
-                <StackPanel Margin="5">
-                    <CheckBox Content="Вложения" 
-                              IsChecked="{Binding IsAttachments}"
-                              Margin="0,5"/>
-                </StackPanel>
-            </GroupBox>
-        </StackPanel>
+                <!-- Группа: Лечение -->
+                <Expander Header="Лечение и назначения" IsExpanded="True" Margin="0,0,0,10">
+                    <StackPanel Margin="0,4,0,0">
+                        <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,0,0,6">
+                            <CheckBox Content="Назначения (Медикаменты / Процедуры)" IsChecked="{Binding IsAssignments, Mode=TwoWay}"/>
+                        </Border>
+                        <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,8">
+                            <CheckBox Content="Лечебные действия" IsChecked="{Binding IsTreatmentActions, Mode=TwoWay}"/>
+                        </Border>
+                    </StackPanel>
+                </Expander>
 
-        <StackPanel Grid.Row="2" 
-                    Orientation="Horizontal" 
-                    HorizontalAlignment="Center">
-            <Button Content="OK" 
-                    Width="80" 
-                    Height="30"
-                    IsDefault="True"
-                    Click="Ok_Click"
-                    Margin="0,0,10,0"/>
-            <Button Content="Отмена" 
-                    Width="80" 
-                    Height="30"
-                    IsCancel="True"/>
+                <!-- Группа: Документы -->
+                <Expander Header="Документы и вложения" IsExpanded="True" Margin="0,0,0,4">
+                    <StackPanel Margin="0,4,0,0">
+                        <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,8">
+                            <CheckBox Content="Вложения (Файлы, Снимки, Справки)" IsChecked="{Binding IsAttachments, Mode=TwoWay}"/>
+                        </Border>
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Кнопки действий -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Готово" Width="95" Height="32" Margin="0,0,10,0" IsDefault="True" Style="{StaticResource FluentPrimaryButton}" Click="Ok_Click"/>
+            <Button Content="Отмена" Width="90" Height="32" IsCancel="True" Click="Cancel_Click"/>
         </StackPanel>
     </Grid>
 </Window>
