@@ -2,9 +2,10 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Тип шаблона"
-        Width="460"
-        SizeToContent="Height"
-        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        ResizeMode="CanResizeWithGrip"
+        MinWidth="460"
+        MinHeight="280"
         WindowStartupLocation="CenterOwner"
         Background="{StaticResource FluentBgWindow}"
         Foreground="{StaticResource FluentTextPrimary}"
@@ -31,30 +32,32 @@
 
         <!-- Карточка вариантов -->
         <Border Grid.Row="1" Background="{StaticResource FluentBgCard}" BorderBrush="{StaticResource FluentBorder}" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,0,0,18">
-            <StackPanel>
-                <TextBlock Text="Категория документа" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource FluentTextTitle}" Margin="0,0,0,10"/>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="Категория документа" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource FluentTextTitle}" Margin="0,0,0,10"/>
 
-                <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
-                    <CheckBox Content="Консультация (Врачебный прием)"
-                              IsChecked="{Binding IsConsultation, Mode=TwoWay}"
-                              FontWeight="Medium"
-                              FontSize="13"/>
-                </Border>
+                    <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                        <CheckBox Content="Консультация (Врачебный прием)"
+                                  IsChecked="{Binding IsConsultation, Mode=TwoWay}"
+                                  FontWeight="Medium"
+                                  FontSize="13"/>
+                    </Border>
 
-                <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
-                    <CheckBox Content="Инструментальное исследование (УЗИ, Рентген, ЭКГ)"
-                              IsChecked="{Binding IsInstrumental, Mode=TwoWay}"
-                              FontWeight="Medium"
-                              FontSize="13"/>
-                </Border>
+                    <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                        <CheckBox Content="Инструментальное исследование (УЗИ, Рентген, ЭКГ)"
+                                  IsChecked="{Binding IsInstrumental, Mode=TwoWay}"
+                                  FontWeight="Medium"
+                                  FontSize="13"/>
+                    </Border>
 
-                <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,10">
-                    <CheckBox Content="Лабораторное исследование (Анализы)"
-                              IsChecked="{Binding IsLaboratory, Mode=TwoWay}"
-                              FontWeight="Medium"
-                              FontSize="13"/>
-                </Border>
-            </StackPanel>
+                    <Border Background="{StaticResource FluentBgSubCard}" BorderBrush="{StaticResource FluentBorderLight}" BorderThickness="1" CornerRadius="6" Padding="12,10">
+                        <CheckBox Content="Лабораторное исследование (Анализы)"
+                                  IsChecked="{Binding IsLaboratory, Mode=TwoWay}"
+                                  FontWeight="Medium"
+                                  FontSize="13"/>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
 
         <!-- Кнопки действий -->
